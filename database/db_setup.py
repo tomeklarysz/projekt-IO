@@ -43,8 +43,8 @@ def create_tables(conn):
                 first_name VARCHAR(100) NOT NULL,
                 last_name VARCHAR(100) NOT NULL,
                 qr_hash VARCHAR(256) UNIQUE NOT NULL, 
-                vector_features DOUBLE PRECISION[], 
-                photo_path VARCHAR(255)
+                vector_features DOUBLE PRECISION[] NOT NULL, 
+                photo_path VARCHAR(255) NOT NULL
             );
         """)
         print("Table 'employees' created successfully.")
