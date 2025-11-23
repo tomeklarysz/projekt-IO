@@ -6,11 +6,11 @@ def main():
     
     # for testing purposes update this
     args = {
-        "photo_path": "photos/IMG_20251123_200128.jpg",
-        "employee_id": 3,
-        "first_name": "tomek2",
-        "last_name": "tomek2",
-        "qr_hash": "tomek2"
+        "photo_path": "",
+        "employee_id": 1,
+        "first_name": "",
+        "last_name": "",
+        "qr_hash": ""
     }
     
     print(f"Processing employee ID {args['employee_id']} with photo {args['photo_path']}...")
