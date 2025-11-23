@@ -1,6 +1,9 @@
 import sys
 import os
 
+# Path to the photo of the test user
+PHOTO_PATH = 'photos/scan.jpg'
+
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,14 +27,30 @@ def setup_test_user():
             return res[0]
         
         # Insert test user
-        # Note: You need a real photo path for this to work fully, 
-        # or we can manually insert a vector if we had one.
-        # For now, we'll insert a placeholder and expect the user to provide a valid path or vector manually for a real test.
+        # We need to compute the vector for the test user
+        from face_auth.recognizer import FaceRecognizer
+        recognizer = FaceRecognizer()
+        
+        image_path = PHOTO_PATH
+        if not os.path.exists(image_path):
+             print(f"Warning: Test photo {image_path} not found.")
+             vector = None
+        else:
+            image = recognizer.load_image_file(image_path)
+            vector = recognizer.get_face_encoding(image)
+            
+        if vector is None:
+            print("Warning: Could not generate vector for test user.")
+            
+        # Convert vector to list for DB insertion if needed, or keep as is if DB adapter handles it.
+        # Assuming DB expects a list or array.
+        vector_list = vector.tolist() if hasattr(vector, 'tolist') else vector
+
         cur.execute("""
-            INSERT INTO employees (first_name, last_name, qr_hash, photo_path)
-            VALUES ('Test', 'User', 'test_qr_hash', 'photos/scan.jpg')
+            INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
+            VALUES ('Test', 'User', 'test_qr_hash', %s, %s)
             RETURNING id
-        """)
+        """, (vector_list, image_path))
         user_id = cur.fetchone()[0]
         conn.commit()
         print(f"Created test user with ID {user_id}")

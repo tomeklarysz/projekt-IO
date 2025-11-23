@@ -13,7 +13,7 @@ def get_employee_face_data(employee_id):
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT vector_features, photo_path FROM employees WHERE id = %s",
+            "SELECT first_name, vector_features, photo_path FROM employees WHERE id = %s",
             (employee_id,)
         )
         result = cur.fetchone()
