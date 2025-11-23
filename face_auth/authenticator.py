@@ -32,21 +32,21 @@ class FaceAuthenticator:
         if not photo_path:
             return None, "No face data (vector or photo) found for user."
             
-        try:
-            print(f"Generating vector from photo: {photo_path}")
-            image = self.recognizer.load_image_file(photo_path)
-            if image is None:
-                 return None, f"Could not load image from {photo_path}"
+        # try:
+        #     print(f"Generating vector from photo: {photo_path}")
+        #     image = self.recognizer.load_image_file(photo_path)
+        #     if image is None:
+        #          return None, f"Could not load image from {photo_path}"
 
-            known_vector = self.recognizer.get_face_encoding(image)
-            if known_vector is not None:
-                # Save it for future use
-                update_employee_vector(user_id, known_vector)
-                return known_vector, None
-            else:
-                return None, "Could not extract face features from stored photo."
-        except Exception as e:
-            return None, f"Error processing stored photo: {e}"
+        #     known_vector = self.recognizer.get_face_encoding(image)
+        #     if known_vector is not None:
+        #         # Save it for future use
+        #         update_employee_vector(user_id, known_vector)
+        #         return known_vector, None
+        #     else:
+        #         return None, "Could not extract face features from stored photo."
+        # except Exception as e:
+        #     return None, f"Error processing stored photo: {e}"
 
     def verify_user(self, user_id, timeout=10):
         """

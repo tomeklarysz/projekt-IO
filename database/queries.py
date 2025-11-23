@@ -51,3 +51,57 @@ def update_employee_vector(employee_id, vector_features):
         return False
     finally:
         conn.close()
+
+def upsert_employee_vector(employee_id, vector_features, first_name=None, last_name=None, qr_hash=None, photo_path=None):
+    """
+    Updates the vector_features for a given employee_id.
+    If the employee does not exist and required fields are provided, inserts a new employee.
+    
+    Returns:
+        "Updated" if updated.
+        "Created" if inserted.
+        "Not Found" if not found and cannot insert.
+        "Error" if an exception occurred.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return "Error"
+    
+    try:
+        cur = conn.cursor()
+        # Convert numpy array to list if necessary
+        if hasattr(vector_features, 'tolist'):
+            vector_features = vector_features.tolist()
+            
+        # Try Update
+        cur.execute(
+            "UPDATE employees SET vector_features = %s, photo_path = %s WHERE id = %s",
+            (vector_features, photo_path, employee_id)
+        )
+        
+        if cur.rowcount > 0:
+            conn.commit()
+            return "Updated"
+            
+        # If not updated, check if we can insert
+        if first_name and last_name and qr_hash:
+            # We have enough info to insert
+            # Note: photo_path is optional in schema but good to have if we used it to generate vector
+            cur.execute(
+                """
+                INSERT INTO employees (id, first_name, last_name, qr_hash, vector_features, photo_path)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (employee_id, first_name, last_name, qr_hash, vector_features, photo_path)
+            )
+            conn.commit()
+            return "Created"
+        else:
+            return "Not Found"
+            
+    except Exception as e:
+        print(f"Error upserting employee vector: {e}")
+        conn.rollback()
+        return "Error"
+    finally:
+        conn.close()
