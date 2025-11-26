@@ -1,0 +1,384 @@
+## Dokumentacja inżynierii wymagań
+
+  
+
+Członkowie zespołu:
+
+-   Karol Arabasz
+    
+-   Tomasz Larysz
+    
+-   Maksym Ząbroń
+    
+
+  
+
+1.Macierz kompetencji zespołu
+
+  
+
+| Kompetencje | Karol Arabasz | Tomasz Larysz | Maksym Ząbroń |
+| --- | --- | --- | --- |
+| Programowanie Python | Posiada | Posiada (podstawy) | Posiada(Podstawy) |
+| Technologie webowe | Posiada (podstawy) | Posiada | Posiada |
+| Testowanie oprogramowania | Posiada (podstawy) | Posiada (podstawy) | Posiada(Podstawy) |
+| Bazy danych | Posiada | Posiada | Posiada(Podstawy) |
+| Technologie rozpoznawania obrazów | Nie posiada | Nie posiada | Nie posiada |
+| Zarządzanie zespołem | Posiada (podstawy) | Posiada (podstawy) | Posiada |
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+2.Zestaw pytań, które zostały zadane w celu uszczegółowienia zadanego projektu
+
+  
+
+| Pytanie  | Odpowiedź |
+| --- | --- |
+| Ile ma wynosić czas przetwarzania? | 5 sekund |
+| Jaka ma być trafność rozpoznawania? | 90% |
+| Ile pracowników musi zawierać baza? | Minimum 20 |
+| Jaki rodzaj kamery będzie wykorzystywany? | Dowolna kamera |
+| Jak pracownik będzie otrzymywał kod QR? | Kod będzie drukowany  |
+| Czy kod QR będzie miał termin ważności? | Tak |
+| Jak mają być raportowane wyjścia i wejścia? | Wypisane w pliku txt, poprawne/niepoprawne z możliwością wyświetlenia i pobrania |
+| Co się składa na panel administracyjny? | 1.Zarządzanie pracownikami - dodanie, aktualizacja2.Dodawanie, drukowanie kodów QR3.Zmiana terminów ważności kodów QR4.Raportowanie wejść i wyjść  |
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+| Kategoria | Opis |
+| --- | --- |
+| Aktorzy | Pracownik (Inicjator), Kamera, System Weryfikacji (Backend), Baza Danych (Repozytorium Danych) |
+| Opis | Weryfikacja tożsamości pracownika za pomocą dwuetapowego procesu: skanowania kodu QR, a następnie weryfikacji biometrycznej twarzy. Celem jest przyznanie/odrzucenie przepustki i rejestracja ruchu (wejście/wyjście). |
+| Dane Wejściowe | Obraz Kodu QR (binarne), Obraz/Wideo Twarzy (binarne), Typ Ruchu (Wejście/Wyjście - opcjonalne). |
+| Wyzwalacz | Pracownik pokazuje Kod QR do kamery, inicjując automatyczne skanowanie. |
+| Odpowiedź | Pozytywna: Wyświetlenie "PRZEPUSTKA PRZYZNANA" oraz rejestracja zdarzenia (Wejście/Wyjście) w systemie. |
+|| Negatywna: Wyświetlenie "ODRZUCONO" z krótkim opisem powodu (np. Nieznany Kod QR, Błąd Weryfikacji Twarzy). |
+| Uwagi | System musi szybko porównać dane biometryczne twarzy z referencyjnym zdjęciem z Bazy Danych powiązanym z zeskanowanym Kodem QR. Musi być obsłużona zarówno ścieżka wejścia, jak i wyjścia. |
+
+![DIagram UML](UML.png)
+
+
+# 1. QR Module
+
+## Przegląd
+Moduł QR zapewnia funkcjonalność generowania i skanowania kodów QR. Obecnie używa lokalnej bazy SQLite do testów, ale został zaprojektowany tak, aby łatwo podpiąć go do większej bazy danych projektu.
+
+---
+
+## Struktura Plików
+
+```
+QR/
+├── generator.py     # Generowanie kodów QR
+├── scanner.py       # Skanowanie kodów QR za pomocą kamery
+├── remover.py       # Usuwanie kodów QR (przez skanowanie)
+├── database.py      # [TYMCZASOWE] Lokalna baza SQLite do testów
+├── main.py          # Interfejs CLI do testowania
+└── qr_codes.db      # [TYMCZASOWE] Baza testowa
+```
+
+---
+
+## Główne Funkcje Modułu
+
+### 1. generator.py - Generowanie Kodów QR
+
+#### `generate_qr_code()`
+**Opis:** Generuje nowy unikalny identyfikator UUID, zapisuje go do bazy danych i tworzy obraz kodu QR.
+
+**Parametry:** Brak
+
+**Zwraca:**
+- `filename` (str) - Nazwa pliku wygenerowanego obrazu (format: `qr_<uuid>.png`)
+- `None` - Jeśli zapis do bazy danych się nie powiódł
+
+**Skutki:**
+- Tworzy plik PNG z kodem QR w bieżącym katalogu
+- Zapisuje UUID do bazy danych (obecnie SQLite, później do głównej bazy)
+- Wyświetla komunikaty w konsoli
+
+**Przykład użycia:**
+```python
+import generator
+
+filename = generator.generate_qr_code()
+if filename:
+    print(f"Kod QR zapisany jako: {filename}")
+    # filename zawiera nazwę pliku, np. "qr_53b4cd8d-31f1-4e34-a7d1-35f831fb2662.png"
+else:
+    print("Błąd generowania kodu")
+```
+
+**Parametry kodu QR:**
+- `version=1` - Rozmiar kodu QR (1 = najmniejszy)
+- `error_correction=ERROR_CORRECT_L` - Niski poziom korekcji błędów
+- `box_size=10` - Rozmiar każdego "pudełka" w pikselach
+- `border=4` - Szerokość obramowania
+
+---
+
+### 2. scanner.py - Skanowanie Kodów QR
+
+#### `scan_qr_code()`
+**Opis:** Otwiera kamerę, skanuje kod QR i weryfikuje go w bazie danych.
+
+**Parametry:** Brak
+
+**Zwraca:** Brak (funkcja działa do momentu wykrycia kodu lub naciśnięcia 'q')
+
+**Zachowanie:**
+1. Otwiera kamerę (VideoCapture(0))
+2. Wyświetla podgląd kamery w oknie "QR Code Scanner"
+3. Ciągle skanuje w poszukiwaniu kodu QR
+4. Po wykryciu kodu:
+   - Weryfikuje kod w bazie danych
+   - Jeśli kod istnieje: wyświetla "SUCCESS" i kończy
+   - Jeśli kod nie istnieje: wyświetla "PERMISSION DENIED" i kontynuuje skanowanie
+5. Użytkownik może nacisnąć 'q', aby zakończyć
+
+**Przykład użycia:**
+```python
+import scanner
+
+# Blokująca funkcja - zatrzyma wykonanie do momentu zeskanowania kodu
+scanner.scan_qr_code()
+```
+
+---
+
+### 3. remover.py - Usuwanie Kodów QR
+
+#### `remove_qr_code()`
+**Opis:** Otwiera kamerę, skanuje kod QR i usuwa go z bazy danych jeśli istnieje.
+
+**Parametry:** Brak
+
+**Zwraca:** Brak (funkcja działa do momentu wykrycia i usunięcia kodu lub naciśnięcia 'q')
+
+**Zachowanie:**
+1. Otwiera kamerę (VideoCapture(0))
+2. Wyświetla podgląd kamery w oknie "QR Code Remover"
+3. Ciągle skanuje w poszukiwaniu kodu QR
+4. Po wykryciu kodu:
+   - Jeśli kod istnieje: usuwa go i wyświetla "SUCCESS"
+   - Jeśli kod nie istnieje: wyświetla komunikat i kontynuuje skanowanie
+5. Użytkownik może nacisnąć 'q', aby zakończyć
+
+**Przykład użycia:**
+```python
+import remover
+
+remover.remove_qr_code()
+```
+
+---
+
+## Integracja z Główną Bazą Danych
+
+Obecnie moduł używa `database.py` z lokalną bazą SQLite do testów. Aby podpiąć moduł do głównej bazy danych projektu, wystarczy zastąpić wywołania funkcji z `database.py` innymi funkcjami.
+
+Funkcje do Zastąpienia:
+
+Moduł QR używa 4 funkcji z `database.py`:
+
+#### 1. `database.init_db()`
+**Gdzie używane:** generator.py, scanner.py, remover.py  
+**Co robi:** Inicjalizuje bazę danych  
+Do usunięcia w dalszej części produkcji
+
+#### 2. `database.save_code(code_id)`
+**Gdzie używane:** generator.py  
+**Co robi:** Zapisuje UUID kodu QR do bazy  
+**Parametry:** `code_id` (str) - UUID do zapisania  
+**Zwraca:** `True` jeśli sukces, `False` jeśli błąd  
+
+#### 3. `database.verify_code(code_id)`
+**Gdzie używane:** scanner.py, remover.py  
+**Co robi:** Sprawdza czy kod istnieje w bazie  
+**Parametry:** `code_id` (str) - UUID do weryfikacji  
+**Zwraca:** `True` jeśli kod istnieje, `False` jeśli nie  
+
+#### 4. `database.delete_code(code_id)`
+**Gdzie używane:** remover.py  
+**Co robi:** Usuwa kod z bazy  
+**Parametry:** `code_id` (str) - UUID do usunięcia  
+**Zwraca:** `True` jeśli usunięto, `False` jeśli nie istniał  
+
+---
+
+
+## Zależności
+
+```
+qrcode==7.4.2
+opencv-python==4.8.1.78
+pillow==10.1.0
+```
+
+Instalacja:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### Uwagi:
+- Funkcje skanujące są **blokujące** i powinny być uruchamiane w wątkach
+- Obrazy QR są zapisywane w bieżącym katalogu
+- UUID kodów QR to standardowe UUID v4 (36 znaków)
+
+
+
+---
+
+# Dokumentacja Modułu `face_auth`
+
+Moduł `face_auth` odpowiada za uwierzytelnianie użytkowników na podstawie rozpoznawania twarzy. Wykorzystuje bibliotekę `DeepFace` do generowania i porównywania wektorów cech twarzy oraz `OpenCV` do obsługi kamery i przetwarzania obrazu.
+
+## Struktura Modułu
+
+Moduł składa się z następujących plików:
+- `admin.py`: Funkcje administracyjne do zarządzania danymi biometrycznymi pracowników.
+- `authenticator.py`: Główna logika uwierzytelniania użytkownika.
+- `camera.py`: Obsługa kamery internetowej.
+- `recognizer.py`: Wrapper na bibliotekę `DeepFace` do rozpoznawania twarzy.
+
+---
+
+## 1. `admin.py`
+
+Zawiera funkcje pomocnicze do rejestracji i aktualizacji danych biometrycznych pracowników.
+
+### Funkcje
+
+#### `upsert_employee_from_photo(photo_path, employee_id, first_name=None, last_name=None, qr_hash=None)`
+
+Aktualizuje lub wstawia wektor twarzy pracownika na podstawie dostarczonego zdjęcia.
+
+- **Parametry:**
+  - `photo_path` (str): Ścieżka do pliku ze zdjęciem.
+  - `employee_id` (int): ID pracownika.
+  - `first_name` (str, opcjonalnie): Imię (wymagane dla nowego pracownika).
+  - `last_name` (str, opcjonalnie): Nazwisko (wymagane dla nowego pracownika).
+  - `qr_hash` (str, opcjonalnie): Hash QR (wymagane dla nowego pracownika).
+
+- **Zwraca:**
+  - `str`: Komunikat o wyniku operacji ("Updated", "Created", "Not Found", "Error" lub szczegóły błędu).
+
+---
+
+## 2. `authenticator.py`
+
+Zawiera klasę `FaceAuthenticator`, która zarządza procesem weryfikacji tożsamości użytkownika.
+
+### Klasa `FaceAuthenticator`
+
+#### `__init__()`
+Inicjalizuje instancję `FaceRecognizer`.
+
+#### `ensure_user_has_vector(user_id)`
+Sprawdza, czy użytkownik posiada wektor twarzy w bazie danych. Jeśli nie, próbuje go wygenerować na podstawie zapisanego zdjęcia (`photo_path`).
+
+- **Parametry:**
+  - `user_id` (int): ID użytkownika do sprawdzenia.
+
+- **Zwraca:**
+  - `(numpy_array, str)`: Krotka zawierająca wektor twarzy (jeśli sukces) lub `None`, oraz komunikat błędu (jeśli wystąpił) lub `None`.
+
+#### `verify_user(user_id, timeout=10)`
+Weryfikuje, czy osoba przed kamerą to użytkownik o podanym `user_id`. Uruchamia podgląd z kamery i porównuje twarz w czasie rzeczywistym.
+
+- **Parametry:**
+  - `user_id` (int): ID użytkownika do weryfikacji.
+  - `timeout` (int, domyślnie 10): Czas w sekundach, po którym weryfikacja zostanie przerwana, jeśli nie uda się dopasować twarzy.
+
+- **Zwraca:**
+  - `(bool, str)`: Krotka `(True, "Verification successful.")` jeśli weryfikacja się powiodła, w przeciwnym razie `(False, komunikat_błędu)`.
+
+---
+
+## 3. `camera.py`
+
+Obsługuje interakcję z kamerą internetową. Implementuje protokół Context Manager (`with Camera() as cam:`).
+
+### Klasa `Camera`
+
+#### `__init__(camera_index=0)`
+Konstruktor klasy.
+- **Parametry:**
+  - `camera_index` (int, domyślnie 0): Indeks urządzenia kamery.
+
+#### `start()`
+Uruchamia przechwytywanie obrazu z kamery. Rzuca wyjątek `RuntimeError`, jeśli nie można otworzyć kamery.
+
+#### `get_frame()`
+Pobiera pojedynczą klatkę z kamery.
+- **Zwraca:**
+  - `numpy.ndarray`: Obraz klatki z kamery.
+
+#### `stop()`
+Zwalnia zasoby kamery.
+
+---
+
+## 4. `recognizer.py`
+
+Wrapper na bibliotekę `DeepFace`, dostarczający uproszczony interfejs do generowania embeddingów i porównywania twarzy.
+
+### Klasa `FaceRecognizer`
+
+#### `__init__(model_name="Facenet")`
+Inicjalizuje model DeepFace. Wykonuje próbne wywołanie, aby załadować model do pamięci.
+- **Parametry:**
+  - `model_name` (str, domyślnie "Facenet"): Nazwa modelu do użycia (np. "Facenet", "VGG-Face", "ArcFace").
+
+#### `get_face_encoding(image)`
+Oblicza embedding (wektor cech) dla pierwszej twarzy wykrytej na obrazie.
+
+- **Parametry:**
+  - `image` (numpy.ndarray): Obraz wejściowy (BGR, format OpenCV).
+
+- **Zwraca:**
+  - `list` lub `None`: Lista floatów reprezentująca wektor twarzy, lub `None` jeśli nie wykryto twarzy.
+
+#### `compare_faces(known_vector, unknown_vector, threshold=0.4)`
+Porównuje znany wektor twarzy z nieznanym wektorem używając podobieństwa cosinusowego.
+
+- **Parametry:**
+  - `known_vector` (list/numpy.array): Wzorcowy wektor twarzy.
+  - `unknown_vector` (list/numpy.array): Wektor twarzy do sprawdzenia.
+  - `threshold` (float, domyślnie 0.4): Próg akceptacji. Jeśli dystans cosinusowy jest mniejszy od progu, twarze są uznawane za zgodne.
+
+- **Zwraca:**
+  - `bool`: `True` jeśli twarze pasują, `False` w przeciwnym razie.
+
+#### `load_image_file(path)`
+Wczytuje obraz z pliku za pomocą OpenCV.
+
+- **Parametry:**
+  - `path` (str): Ścieżka do pliku obrazu.
+
+- **Zwraca:**
+  - `numpy.ndarray`: Obraz w formacie BGR.
+
