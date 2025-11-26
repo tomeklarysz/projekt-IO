@@ -40,7 +40,7 @@ DB_PORT=5432
 
 In pgAdmin:
 ```
-Servers -> PostgreSQL -> Databases -> right button -> Create -> Database
+Servers -> PostgreSQL -> Databases -> Right-click -> Create -> Database
 ```
 The Name must exactly match the DB_NAME value in your .env file.
 
