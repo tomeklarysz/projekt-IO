@@ -20,3 +20,32 @@ Run authentication system against your camera:
 ```
 python main.py
 ```
+
+**How to start the database**
+
+1.Install PostgreSQL and pgAdmin
+
+https://www.postgresql.org/download/windows/
+
+2.Create .env file
+```
+DB_NAME=your_database_name
+DB_USER=your_username
+DB_PASS=your_password
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+3.Create database in PostgreSQL
+
+In pgAdmin:
+```
+Servers -> PostgreSQL -> Databases -> right button -> Create -> Database
+```
+The Name must exactly match the DB_NAME value in your .env file.
+
+4.Install Dependencies and Run Setup Script
+```
+pip install -r requirements.txt
+python db_setup.py
+```
