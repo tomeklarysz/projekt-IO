@@ -382,3 +382,78 @@ Wczytuje obraz z pliku za pomocą OpenCV.
 - **Zwraca:**
   - `numpy.ndarray`: Obraz w formacie BGR.
 
+
+---
+
+# 2. Testy
+
+# 2.1 QR Module
+
+## Opis
+Testy zostały napisane przy użyciu wbudowanej biblioteki `unittest`. Do izolacji testowanych jednostek od zewnętrznych zależności (takich jak kamera czy system plików) wykorzystywana jest biblioteka `unittest.mock`.
+
+## Struktura Testów
+Testy znajdują się w katalogu `QR/tests/`:
+
+```
+QR/tests/
+├── test_database.py     # Testy operacji na bazie danych
+├── test_generator.py    # Testy generowania kodów QR
+├── test_scanner.py      # Testy skanowania i weryfikacji
+└── test_remover.py      # Testy usuwania kodów
+```
+
+---
+
+## Opis Testów Modułu QR
+
+### 1. Testy Bazy Danych (`test_database.py`)
+Weryfikują poprawność interakcji z lokalną bazą danych SQLite.
+- **Działanie:** Użycie tymczasowego katalogu i tymczasowej bazy danych dla każdego testu (metody `setUp` i `tearDown`), aby zapewnić izolację.
+- **Scenariusze:**
+    - `test_init_db`: Sprawdza, czy tabela `codes` jest poprawnie tworzona.
+    - `test_save_code`: Weryfikuje zapisanie unikalnego UUID.
+    - `test_save_duplicate_code`: Sprawdza, czy system blokuje dodanie duplikatu.
+    - `test_verify_code`: Sprawdza weryfikację istniejącego i nieistniejącego kodu.
+    - `test_delete_code`: Weryfikuje usunięcie kodu.
+    - `test_delete_nonexistent_code`: Sprawdza zachowanie przy próbie usunięcia nieistniejącego wpisu.
+
+### 2. Testy Generatora (`test_generator.py`)
+Testują funkcję `generate_qr_code`.
+- **Działanie:** Mockowanie `uuid`, `database` oraz biblioteki `qrcode`, aby nie tworzyć fizycznych plików i nie łączyć się z bazą.
+- **Scenariusze:**
+    - `test_generate_qr_code_success`: Symuluje sukces zapisu do bazy i generowania obrazu. Sprawdza wywołania funkcji bibliotecznych.
+    - `test_generate_qr_code_db_fail`: Symuluje błąd bazy danych i upewnia się, że plik nie jest generowany.
+
+### 3. Testy Skanera (`test_scanner.py`)
+Testują funkcję `scan_qr_code`.
+- **Działanie:** Mockowanie `cv2.VideoCapture` (kamera) oraz `cv2.QRCodeDetector`, aby symulować wideo i wykrywanie kodów.
+- **Scenariusze:**
+    - `test_scan_qr_code_found`: Symuluje wykrycie poprawnego kodu QR istniejącego w bazie.
+    - `test_scan_qr_code_not_found_then_quit`: Symuluje wykrycie kodu, którego nie ma w bazie, a następnie wyjście przez użytkownika.
+    - `test_camera_not_opened`: Weryfikuje zachowanie, gdy nie uda się otworzyć kamery.
+
+### 4. Testy Usuwania (`test_remover.py`)
+Testują funkcję `remove_qr_code`.
+- **Działanie:** Analogicznie do skanera, mockowanie kamery i detektora.
+- **Scenariusze:**
+    - `test_remove_qr_code_success`: Symuluje wykrycie, weryfikację i pomyślne usunięcie kodu.
+    - `test_remove_qr_code_found_but_delete_fails`: Sprawdza obsługę błędu usuwania z bazy danych.
+
+---
+
+## Uruchamianie Testów
+
+Aby uruchomić wszystkie testy, należy wykonać następujące polecenie z głównego katalogu projektu:
+
+```bash
+python -m unittest discover QR/tests
+```
+
+Aby uruchomić testy dla konkretnego modułu:
+
+```bash
+python QR/tests/test_generator.py
+```
+
+
