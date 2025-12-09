@@ -32,21 +32,21 @@ class FaceAuthenticator:
         if not photo_path:
             return None, "No face data (vector or photo) found for user."
             
-        # try:
-        #     print(f"Generating vector from photo: {photo_path}")
-        #     image = self.recognizer.load_image_file(photo_path)
-        #     if image is None:
-        #          return None, f"Could not load image from {photo_path}"
+        try:
+            print(f"Generating vector from photo: {photo_path}")
+            image = self.recognizer.load_image_file(photo_path)
+            if image is None:
+                 return None, f"Could not load image from {photo_path}"
 
-        #     known_vector = self.recognizer.get_face_encoding(image)
-        #     if known_vector is not None:
-        #         # Save it for future use
-        #         update_employee_vector(user_id, known_vector)
-        #         return known_vector, None
-        #     else:
-        #         return None, "Could not extract face features from stored photo."
-        # except Exception as e:
-        #     return None, f"Error processing stored photo: {e}"
+            known_vector = self.recognizer.get_face_encoding(image)
+            if known_vector is not None:
+                # Save it for future use
+                update_employee_vector(user_id, known_vector)
+                return known_vector, None
+            else:
+                return None, "Could not extract face features from stored photo."
+        except Exception as e:
+            return None, f"Error processing stored photo: {e}"
 
     def verify_user(self, user_id, timeout=10):
         """
@@ -63,12 +63,16 @@ class FaceAuthenticator:
         print("Starting camera for verification...")
         try:
             with Camera() as cam:
+                window_name = "Face Authentication"
+                cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+                
                 start_time = time.time()
                 while time.time() - start_time < timeout:
                     frame = cam.get_frame()
                     
                     # Show camera feed
-                    cv2.imshow("Face Authentication", frame)
+                    cv2.imshow(window_name, frame)
                     # Allow UI to update and check for 'q' to quit
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         return False, "User cancelled verification."
@@ -82,13 +86,8 @@ class FaceAuthenticator:
                         if match:
                             return True, "Verification successful."
                         else:
-                            # We found a face but it didn't match. 
-                            # We could return immediately or keep trying until timeout.
-                            # Let's keep trying for a bit in case of bad angle, but maybe not full timeout if we want fast fail.
-                            # For now, let's just print and continue
                             print("Face detected but not matching...")
                     
-                    # Small sleep to not burn CPU
                     time.sleep(0.1)
                 
                 return False, "Verification timed out. Face not matched."
