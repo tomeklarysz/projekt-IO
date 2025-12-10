@@ -1,6 +1,6 @@
+numpy
+opencv-python
+face_recognition
+qrcode[pil]
 psycopg2-binary
 python-dotenv
-opencv-python
-deepface
-tf-keras
-numpy
