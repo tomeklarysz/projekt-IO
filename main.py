@@ -22,30 +22,24 @@ def main():
                 print("\n--- READY For Next User ---")
                 
                 # Step 1: Scan QR Code
-                # This will block until a valid QR is found or 'QUIT' is returned
-                qr_data = scan_qr_code(camera)
+                # This will block until a valid QR is found (returning user dict) or 'QUIT' is returned
+                scan_result = scan_qr_code(camera)
                 
-                if qr_data == "QUIT":
+                if scan_result == "QUIT":
                     print("Exiting application...")
                     break
                 
-                if not qr_data:
+                if not scan_result:
                     # Scanner returned None likely due to error, retry loop
                     time.sleep(1)
                     continue
                     
-                try:
-                    user_id = int(qr_data) # Assuming QR data is just the ID
-                except ValueError:
-                    print(f"Error: Scanned QR data '{qr_data}' is not a valid numeric User ID.")
-                    time.sleep(2)
-                    continue
-
-                print(f"QR Validated. Proceeding to Face Auth for User ID: {user_id}")
+                user_data = scan_result
+                print(f"QR Validated. Proceeding to Face Auth for User: {user_data.get('first_name')}")
                 
                 # Step 2: Face Authentication
-                # We pass the same camera instance
-                success, message = auth.verify_user(user_id, camera, timeout=10)
+                # We pass the same camera instance and the user data
+                success, message = auth.verify_user(user_data, camera, timeout=10)
                 
                 print(f"\nAuthentication Result: {'SUCCESS' if success else 'FAILURE'}")
                 print(f"Details: {message}")
