@@ -67,7 +67,8 @@ class FaceAuthenticator:
         print(f"Starting verification for User: {user_data.get('first_name', 'Unknown')}...")
         try:
             # We use the existing camera_instance
-            window_name = "Face Authentication"
+            window_name = "Access Control"
+            # Ensure window properties are set (idempotent-ish)
             cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
             cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
             
@@ -91,14 +92,14 @@ class FaceAuthenticator:
                     # 3. Compare
                     match = self.recognizer.compare_faces(known_vector, unknown_vector)
                     if match:
-                        cv2.destroyWindow(window_name)
+                        # Do NOT destroy window here, keep it for the scanner loop
                         return True, "Verification successful."
                     else:
                         print("Face detected but not matching...")
                 
                 time.sleep(0.1)
             
-            cv2.destroyWindow(window_name)
+            # Do NOT destroy window here either
             return False, "Verification timed out. Face not matched."
         except Exception as e:
             return False, f"Error during verification: {e}"

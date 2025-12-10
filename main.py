@@ -55,6 +55,11 @@ def main():
         print(f"Critical System Error: {e}")
     finally:
         print("System shutdown.")
+        try:
+            import cv2
+            cv2.destroyAllWindows()
+        except:
+            pass
 
 if __name__ == "__main__":
     main()

@@ -29,13 +29,21 @@ def scan_qr_code(camera_instance):
             employee = get_employee_by_qr(data)
             if employee:
                 print(f"SUCCESS: User '{employee['first_name']}' found via QR.")
+                
+                # Visual Feedback: Draw success message
+                # Bounding box is optional, but we can draw text
+                cv2.putText(frame, f"QR ACCEPTED: {employee['first_name']}", (50, 50), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.imshow("Access Control", frame)
+                cv2.waitKey(1000) # Show for 1 second
+
                 return employee # Return the full user dict
             else:
                 print("PERMISSION DENIED: QR code not recognized.")
                 # Prevent spamming the message
                 time.sleep(2)
 
-        cv2.imshow("QR Code Scanner", frame)
+        cv2.imshow("Access Control", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Quit signal received in scanner.")
