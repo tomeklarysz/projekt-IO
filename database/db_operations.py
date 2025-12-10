@@ -1,12 +1,25 @@
 import psycopg2
 from db_setup import get_db_connection
+from pathlib import Path
+import sys
+import os
 
-def add_employee(first_name, last_name, qr_hash, vector_features, photo_path):
+current_dir = Path(__file__).resolve().parent 
+project_root = current_dir.parent 
+sys.path.append(str(project_root))
+
+import QR.qr_generator as qr_generator
+
+def add_employee(first_name, last_name, vector_features, photo_path):
+    qr_hash = qr_generator.generate_unique_qr_hash()
+    print(f"Generated QR Hash: {qr_hash}")
+    
     conn = get_db_connection()
     if not conn:
-        return
+        return None
 
     cur = conn.cursor()
+    employee_id = None
     try:
         cur.execute("""
             INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
@@ -23,14 +36,27 @@ def add_employee(first_name, last_name, qr_hash, vector_features, photo_path):
 
         conn.commit()
         print(f"Employee inserted with ID: {employee_id}")
+
+        filename_prefix = f"qr_{first_name}_{last_name}"
+        qr_file_path = qr_generator.create_qr_image(qr_hash, filename_prefix)
+        
+        if qr_file_path:
+            print(f"QR Code generated and saved to: {qr_file_path}")
+        else:
+            print("WARNING: Failed to generate QR code image.")
+
         return employee_id
 
     except Exception as e:
         conn.rollback()
         print("Insert error:", e)
+        return None
+        
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
 def get_employee_id_by_qr(qr_hash):
