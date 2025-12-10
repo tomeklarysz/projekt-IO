@@ -1,7 +1,6 @@
 import time
 import cv2
 from database.queries import get_employee_face_data, update_employee_vector
-from face_auth.camera import Camera
 from face_auth.recognizer import FaceRecognizer
 import numpy as np
 
@@ -48,7 +47,7 @@ class FaceAuthenticator:
         except Exception as e:
             return None, f"Error processing stored photo: {e}"
 
-    def verify_user(self, user_id, timeout=10):
+    def verify_user(self, user_id, camera_instance, timeout=10):
         """
         Verifies if the person in front of the camera matches the user_id.
         Returns:
@@ -60,38 +59,42 @@ class FaceAuthenticator:
             return False, error
 
         # 2. Start Camera and Capture
-        print("Starting camera for verification...")
+        print(f"Starting verification for User ID {user_id}...")
         try:
-            with Camera() as cam:
-                window_name = "Face Authentication"
-                cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-                cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+            # We use the existing camera_instance
+            window_name = "Face Authentication"
+            cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+            cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+            
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                try:
+                    frame = camera_instance.get_frame()
+                except RuntimeError as e:
+                    return False, f"Camera error during verification: {e}"
                 
-                start_time = time.time()
-                while time.time() - start_time < timeout:
-                    frame = cam.get_frame()
-                    
-                    # Show camera feed
-                    cv2.imshow(window_name, frame)
-                    # Allow UI to update and check for 'q' to quit
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        return False, "User cancelled verification."
+                # Show camera feed
+                cv2.imshow(window_name, frame)
+                # Allow UI to update and check for 'q' to quit
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    return False, "User cancelled verification."
 
-                    # Try to get encoding from current frame
-                    unknown_vector = self.recognizer.get_face_encoding(frame)
-                    
-                    if unknown_vector is not None:
-                        # 3. Compare
-                        match = self.recognizer.compare_faces(known_vector, unknown_vector)
-                        if match:
-                            return True, "Verification successful."
-                        else:
-                            print("Face detected but not matching...")
-                    
-                    time.sleep(0.1)
+                # Try to get encoding from current frame
+                unknown_vector = self.recognizer.get_face_encoding(frame)
                 
-                return False, "Verification timed out. Face not matched."
+                if unknown_vector is not None:
+                    # 3. Compare
+                    match = self.recognizer.compare_faces(known_vector, unknown_vector)
+                    if match:
+                        cv2.destroyWindow(window_name)
+                        return True, "Verification successful."
+                    else:
+                        print("Face detected but not matching...")
+                
+                time.sleep(0.1)
+            
+            cv2.destroyWindow(window_name)
+            return False, "Verification timed out. Face not matched."
         except Exception as e:
-            return False, f"Camera error: {e}"
-        finally:
-            cv2.destroyAllWindows()
+            return False, f"Error during verification: {e}"
+
