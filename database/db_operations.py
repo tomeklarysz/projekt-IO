@@ -10,17 +10,58 @@ sys.path.append(str(project_root))
 
 import QR.qr_generator as qr_generator
 
-def add_employee(first_name, last_name, vector_features, photo_path):
+from face_auth.recognizer import FaceRecognizer
+
+def add_employee(first_name, last_name, photo_path): 
+    """
+    Generates a face vector from photo_path and inserts a new employee 
+    record, verification status, and QR code into the database.
+    
+    Args:
+        first_name (str): Employee's first name.
+        last_name (str): Employee's last name.
+        photo_path (str): File path to the employee's photo.
+        
+    Returns:
+        int/None: The new employee ID on success, None on failure.
+    """
+    recognizer = FaceRecognizer()
+    
+    # --- 1. GENERATE FACE VECTOR FROM PHOTO ---
+    
+    print(f"Loading image from: {photo_path}")
+    
+    # Step 1: Load the image (using the recognizer's utility method)
+    image = recognizer.load_image_file(photo_path)
+    if image is None:
+        print(f"Error: Could not load image from path: {photo_path}")
+        return None
+        
+    # Step 2: Generate the face encoding (the vector)
+    vector_features = recognizer.get_face_encoding(image)
+    
+    if vector_features is None:
+        print("Error: Could not extract face features from the photo. Employee not added.")
+        return None
+        
+    # Convert numpy array to list if required by the database driver
+    if hasattr(vector_features, 'tolist'):
+        vector_features = vector_features.tolist()
+        
+    # --- 2. DATABASE INSERTION ---
+    
     qr_hash = qr_generator.generate_unique_qr_hash()
     print(f"Generated QR Hash: {qr_hash}")
     
     conn = get_db_connection()
     if not conn:
+        print("Error: Could not connect to the database.")
         return None
 
     cur = conn.cursor()
     employee_id = None
     try:
+        # INSERT into employees table
         cur.execute("""
             INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
             VALUES (%s, %s, %s, %s, %s)
@@ -29,6 +70,7 @@ def add_employee(first_name, last_name, vector_features, photo_path):
 
         employee_id = cur.fetchone()[0]
 
+        # INSERT into verification_statuses table (default to unconfirmed)
         cur.execute("""
             INSERT INTO verification_statuses (employee_id, is_confirmed)
             VALUES (%s, FALSE);
@@ -37,11 +79,14 @@ def add_employee(first_name, last_name, vector_features, photo_path):
         conn.commit()
         print(f"Employee inserted with ID: {employee_id}")
 
+        # --- 3. QR CODE GENERATION ---
+        
         filename_prefix = f"qr_{first_name}_{last_name}"
         qr_file_path = qr_generator.create_qr_image(qr_hash, filename_prefix)
         
         if qr_file_path:
             print(f"QR Code generated and saved to: {qr_file_path}")
+            # 
         else:
             print("WARNING: Failed to generate QR code image.")
 
@@ -58,6 +103,53 @@ def add_employee(first_name, last_name, vector_features, photo_path):
         if conn:
             conn.close()
 
+# def add_employee(first_name, last_name, vector_features, photo_path):
+#     qr_hash = qr_generator.generate_unique_qr_hash()
+#     print(f"Generated QR Hash: {qr_hash}")
+    
+#     conn = get_db_connection()
+#     if not conn:
+#         return None
+
+#     cur = conn.cursor()
+#     employee_id = None
+#     try:
+#         cur.execute("""
+#             INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
+#             VALUES (%s, %s, %s, %s, %s)
+#             RETURNING id;
+#         """, (first_name, last_name, qr_hash, vector_features, photo_path))
+
+#         employee_id = cur.fetchone()[0]
+
+#         cur.execute("""
+#             INSERT INTO verification_statuses (employee_id, is_confirmed)
+#             VALUES (%s, FALSE);
+#         """, (employee_id,))
+
+#         conn.commit()
+#         print(f"Employee inserted with ID: {employee_id}")
+
+#         filename_prefix = f"qr_{first_name}_{last_name}"
+#         qr_file_path = qr_generator.create_qr_image(qr_hash, filename_prefix)
+        
+#         if qr_file_path:
+#             print(f"QR Code generated and saved to: {qr_file_path}")
+#         else:
+#             print("WARNING: Failed to generate QR code image.")
+
+#         return employee_id
+
+#     except Exception as e:
+#         conn.rollback()
+#         print("Insert error:", e)
+#         return None
+        
+#     finally:
+#         if cur:
+#             cur.close()
+#         if conn:
+#             conn.close()
 
 def get_employee_id_by_qr(qr_hash):
     """Retrieves the employee ID based on their unique QR hash."""
