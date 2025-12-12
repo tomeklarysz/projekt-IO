@@ -1,5 +1,5 @@
 import psycopg2
-from db_setup import get_db_connection
+from .db_setup import get_db_connection
 from pathlib import Path
 import sys
 import os
@@ -103,54 +103,6 @@ def add_employee(first_name, last_name, photo_path):
         if conn:
             conn.close()
 
-# def add_employee(first_name, last_name, vector_features, photo_path):
-#     qr_hash = qr_generator.generate_unique_qr_hash()
-#     print(f"Generated QR Hash: {qr_hash}")
-    
-#     conn = get_db_connection()
-#     if not conn:
-#         return None
-
-#     cur = conn.cursor()
-#     employee_id = None
-#     try:
-#         cur.execute("""
-#             INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
-#             VALUES (%s, %s, %s, %s, %s)
-#             RETURNING id;
-#         """, (first_name, last_name, qr_hash, vector_features, photo_path))
-
-#         employee_id = cur.fetchone()[0]
-
-#         cur.execute("""
-#             INSERT INTO verification_statuses (employee_id, is_confirmed)
-#             VALUES (%s, FALSE);
-#         """, (employee_id,))
-
-#         conn.commit()
-#         print(f"Employee inserted with ID: {employee_id}")
-
-#         filename_prefix = f"qr_{first_name}_{last_name}"
-#         qr_file_path = qr_generator.create_qr_image(qr_hash, filename_prefix)
-        
-#         if qr_file_path:
-#             print(f"QR Code generated and saved to: {qr_file_path}")
-#         else:
-#             print("WARNING: Failed to generate QR code image.")
-
-#         return employee_id
-
-#     except Exception as e:
-#         conn.rollback()
-#         print("Insert error:", e)
-#         return None
-        
-#     finally:
-#         if cur:
-#             cur.close()
-#         if conn:
-#             conn.close()
-
 def get_employee_id_by_qr(qr_hash):
     """Retrieves the employee ID based on their unique QR hash."""
     conn = get_db_connection()
@@ -176,7 +128,37 @@ def get_employee_id_by_qr(qr_hash):
             cur.close()
             conn.close()
         return employee_id
-
+    
+def get_employee_by_qr(qr_hash):
+    """
+    Fetches the employee data by QR hash.
+    Returns a dictionary with keys: id, first_name, vector_features, photo_path, or None if not found.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, first_name, vector_features, photo_path FROM employees WHERE qr_hash = %s",
+            (qr_hash,)
+        )
+        result = cur.fetchone()
+        if result:
+            return {
+                "id": result[0],
+                "first_name": result[1],
+                "vector_features": result[2],
+                "photo_path": result[3],
+                "qr_hash": qr_hash
+            }
+        return None
+    except Exception as e:
+        print(f"Error fetching employee by QR: {e}")
+        return None
+    finally:
+        conn.close()
 
 def get_status(employee_id):
     """Retrieves the latest verification status by employee ID."""

@@ -9,6 +9,8 @@ from face_auth.authenticator import FaceAuthenticator
 from face_auth.camera import Camera
 from QR.scanner import scan_qr_code
 
+from database.db_operations import toggle_status_by_qr_hash
+
 def main():
     print("--- Access Control System ---")
     print("Initializing Camera...")
@@ -46,6 +48,7 @@ def main():
                 
                 if success:
                     print("Access GRANTED.")
+                    toggle_status_by_qr_hash(user_data.get('qr_hash'))
                     time.sleep(2) # Show success message for a bit
                 else:
                     print("Access DENIED.")

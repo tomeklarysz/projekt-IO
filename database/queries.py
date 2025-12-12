@@ -24,36 +24,6 @@ def get_employee_face_data(employee_id):
     finally:
         conn.close()
 
-def get_employee_by_qr(qr_hash):
-    """
-    Fetches the employee data by QR hash.
-    Returns a dictionary with keys: id, first_name, vector_features, photo_path, or None if not found.
-    """
-    conn = get_db_connection()
-    if not conn:
-        return None
-    
-    try:
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT id, first_name, vector_features, photo_path FROM employees WHERE qr_hash = %s",
-            (qr_hash,)
-        )
-        result = cur.fetchone()
-        if result:
-            return {
-                "id": result[0],
-                "first_name": result[1],
-                "vector_features": result[2],
-                "photo_path": result[3]
-            }
-        return None
-    except Exception as e:
-        print(f"Error fetching employee by QR: {e}")
-        return None
-    finally:
-        conn.close()
-
 def update_employee_vector(employee_id, vector_features):
     """
     Updates the vector_features for a given employee_id.

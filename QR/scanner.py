@@ -1,5 +1,5 @@
 import cv2
-from database.queries import get_employee_by_qr
+from database.db_operations import get_employee_by_qr
 import time
 
 def scan_qr_code(camera_instance):
