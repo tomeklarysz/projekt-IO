@@ -1,4 +1,4 @@
-from db_operations import get_status_by_qr_hash, toggle_status_by_qr_hash, delete_employee_by_qr_hash, add_employee
+from database.db_operations import get_status_by_qr_hash, toggle_status_by_qr_hash, delete_employee_by_qr_hash, add_employee
 
 emp_id = add_employee("karol", "xxxx", "..\images\img1.jpg")
 
