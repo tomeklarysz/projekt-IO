@@ -9,6 +9,29 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
 
+    const handleRegister = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName
+                }),
+            });
+
+            if (response.ok) {
+                onAdd(firstName, lastName);
+            } else {
+                console.error("Failed to register worker");
+            }
+        } catch (error) {
+            console.error("Error registering worker:", error);
+        }
+    };
+
     return (
         <div className="modal-overlay" onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
@@ -63,7 +86,7 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                     <button 
                         type="button" 
                         className="btn btn-primary"
-                        onClick={() => onAdd(firstName, lastName)}
+                        onClick={handleRegister}
                         disabled={!firstName || !lastName}
                         style={{opacity: (!firstName || !lastName) ? 0.6 : 1}}
                     >

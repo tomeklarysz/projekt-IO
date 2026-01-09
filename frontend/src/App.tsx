@@ -4,11 +4,13 @@ import AddModal from "./components/AddModal";
 import SuccessModal from "./components/SuccessModal";
 import Logs from "./pages/Logs";
 import Menu from "./pages/Menu";
+import Details from "./pages/Details";
 
-type Page = "menu" | "logs";
+type Page = "menu" | "logs" | "details";
 
 export default function App() {
     const [page, setPage] = useState<Page>("menu");
+    const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [addedWorkerName, setAddedWorkerName] = useState("");
@@ -36,6 +38,11 @@ export default function App() {
         setIsSuccessModalOpen(true);
     }
 
+    function handleGoToDetails(workerId: number) {
+        setSelectedWorkerId(workerId);
+        setPage("details");
+    }
+
     return (
         <div className="app-container">
             <header style={{
@@ -55,9 +62,18 @@ export default function App() {
             
             <main className="page-container">
                 {page === "menu" ? (
-                    <Menu onGoToLogs={() => setPage("logs")} onOpenAddWorker={openAddModal} />
-                ) : (
+                    <Menu 
+                        onGoToLogs={() => setPage("logs")} 
+                        onOpenAddWorker={openAddModal} 
+                        onGoToDetails={handleGoToDetails}
+                    />
+                ) : page === "logs" ? (
                     <Logs onGoToMenu={() => setPage("menu")} />
+                ) : (
+                    <Details 
+                        workerId={selectedWorkerId!} 
+                        onGoToMenu={() => setPage("menu")} 
+                    />
                 )}
             </main>
 
