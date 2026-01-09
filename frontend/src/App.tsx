@@ -1,8 +1,73 @@
+import { useState } from "react";
+
+import AddModal from "./components/AddModal";
+import SuccessModal from "./components/SuccessModal";
+import Logs from "./pages/Logs";
+import Menu from "./pages/Menu";
+
+type Page = "menu" | "logs";
+
 export default function App() {
-    return( 
-    <>
-        <h1>React App</h1>
-        <h2>Administrator Panel</h2>
-    </>
+    const [page, setPage] = useState<Page>("menu");
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [addedWorkerName, setAddedWorkerName] = useState("");
+
+    function openAddModal() {
+        setIsAddModalOpen(true);
+    }
+
+    function closeAddModal() {
+        setIsAddModalOpen(false);
+    }
+
+    function closeSuccessModal() {
+        setIsSuccessModalOpen(false);
+    }
+
+    function handleAddWorker(firstName: string, lastName: string) {
+        if (!firstName.trim()) {
+            return;
+        }
+
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+        setAddedWorkerName(fullName);
+        setIsAddModalOpen(false);
+        setIsSuccessModalOpen(true);
+    }
+
+    return (
+        <div className="app-container">
+            <header style={{
+                background: 'var(--white)', 
+                padding: '1rem 2rem', 
+                boxShadow: 'var(--shadow)', 
+                marginBottom: '3rem', 
+                borderBottom: '1px solid var(--secondary-color)'
+            }}>
+                <div style={{maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                        <div style={{width: '32px', height: '32px', background: 'var(--primary-color)', borderRadius: '4px'}}></div>
+                        <h2 style={{margin: 0, fontSize: '1.25rem'}}>SecureGate Admin</h2>
+                    </div>
+                </div>
+            </header>
+            
+            <main className="page-container">
+                {page === "menu" ? (
+                    <Menu onGoToLogs={() => setPage("logs")} onOpenAddWorker={openAddModal} />
+                ) : (
+                    <Logs onGoToMenu={() => setPage("menu")} />
+                )}
+            </main>
+
+            {isAddModalOpen ? (
+                <AddModal onClose={closeAddModal} onAdd={handleAddWorker} />
+            ) : null}
+
+            {isSuccessModalOpen ? (
+                <SuccessModal workerName={addedWorkerName} onClose={closeSuccessModal} />
+            ) : null}
+        </div>
     );
 }
