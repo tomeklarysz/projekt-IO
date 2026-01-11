@@ -76,7 +76,36 @@ Członkowie zespołu:
 || Negatywna: Wyświetlenie "ODRZUCONO" z krótkim opisem powodu (np. Nieznany Kod QR, Błąd Weryfikacji Twarzy). |
 | Uwagi | System musi szybko porównać dane biometryczne twarzy z referencyjnym zdjęciem z Bazy Danych powiązanym z zeskanowanym Kodem QR. Musi być obsłużona zarówno ścieżka wejścia, jak i wyjścia. |
 
+
+## Przedstawienie modelowanego systemu za pomocą diagramów
+
+### Diagram sekwencyjny UML
+
 ![DIagram UML](UML.png)
+
+### Diagram Przepływu Danych
+
+```mermaid
+---
+config:
+  layout: dagre
+---
+flowchart TB
+    pracownik["pracownik"] -- pokazanie kodu qr do kamery --> proces("obsługa wejścia")
+    proces -- dane + zdjęcie twarzy pracownika --> face_auth
+    face_auth("weryfikacja twarzy") -- status weryfikacji --> proces
+    admin["administrator"] -- otwarcie raportu --> panel("panel administratora")
+    statuses[("baza danych: statusy")] -- dane do raportu pracownika --> panel
+    proces -- hash kodu qr --> qr("weryfikacja QR")
+    employees[("baza danych: pracownicy")] -- dane pracownika --> qr
+    qr -- dane pracownika --> proces
+    pracownik -- pokazanie twarzy do kamery --> proces
+    admin -- modyfikacja/dodanie danych pracownika --> panel
+    panel -- wyświetlenie raportu pracownika --> admin
+    panel -- dane do dodania/aktualziacji danych użytkownika --> employees
+    panel -- zapytanie o dane do raportu pracownika --> statuses
+    qr -- zapytanie o dane pracownika --> employees
+```
 
 
 # 1. QR Module
