@@ -44,10 +44,21 @@ def create_tables(conn):
                 last_name VARCHAR(100) NOT NULL,
                 qr_hash VARCHAR(256) UNIQUE NOT NULL, 
                 vector_features DOUBLE PRECISION[] NOT NULL, 
-                photo_path VARCHAR(255) NOT NULL
+                photo_path VARCHAR(255) NOT NULL,
+                qr_expiration_date DATE
             );
         """)
         print("Table 'employees' created successfully.")
+
+        # Check/Add qr_expiration_date if it doesn't exist (migration)
+        cur.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='employees' AND column_name='qr_expiration_date';
+        """)
+        if not cur.fetchone():
+            cur.execute("ALTER TABLE employees ADD COLUMN qr_expiration_date DATE;")
+            print("Column 'qr_expiration_date' added to 'employees'.")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS verification_statuses (

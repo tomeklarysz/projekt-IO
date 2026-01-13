@@ -1,6 +1,7 @@
 import uuid
 import qrcode
 import os
+from datetime import datetime, timedelta
 from typing import Tuple
 
 QR_CODE_DIR = "generated_qrs"
@@ -10,6 +11,8 @@ os.makedirs(QR_CODE_DIR, exist_ok=True)
 def generate_unique_qr_hash():
     return str(uuid.uuid4())
 
+def create_qr_expiration_date():
+    return (datetime.now() + timedelta(days=180)).date()
 
 def create_qr_image(qr_hash, filename_prefix):
     try:
