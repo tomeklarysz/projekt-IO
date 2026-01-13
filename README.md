@@ -49,3 +49,15 @@ The Name must exactly match the DB_NAME value in your .env file.
 pip install -r requirements.txt
 python db_setup.py
 ```
+
+**How to run the application**
+
+#### Backend
+```
+uvicorn api.main:app --reload
+```
+
+#### Frontend
+```
+npm run dev
+```
