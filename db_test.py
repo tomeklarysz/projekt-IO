@@ -1,21 +1,17 @@
-from database.db_operations import get_status_by_qr_hash, toggle_status_by_qr_hash, delete_employee_by_qr_hash, add_employee
+from database.db_operations import  delete_employee_by_qr_hash, add_employee, get_employee_id_by_qr, log_verification_event, get_latest_status, get_logs
 
-emp_id = add_employee("karol", "xxxx", "..\images\img1.jpg")
+#emp_id1 = add_employee("a", "a", ".\images\img1.jpg")
+#emp_id1 = add_employee("z", "z", ".\images\img2.png")
 
-# test_qr = "498eb7fa-c3a4-40fe-8c75-1e9108d1e717"
-# print("\n--- Sprawdzenie Statusu ---")
-# initial_status = get_status_by_qr_hash(test_qr)
-# print(f"Initial status: {initial_status}") 
+qr_hash1 = "19ee93d6-eb20-4988-8e31-fd6ddc829c7c"
+qr_hash2 = "9ca853fe-7150-4b3c-b669-a8634410454c"
 
-# print("\n--- Zmiana Statusu (Toggle) ---")
-# toggle_status_by_qr_hash(test_qr)
+id1 = get_employee_id_by_qr(qr_hash1)
+id2 = get_employee_id_by_qr(qr_hash2)
 
-# new_status = get_status_by_qr_hash(test_qr)
-# print(f"Status po zmianie: {new_status}")
+# get_logs(id1)
+# get_logs(id2)
 
-#print("\n--- Usuwanie ---")
-#delete_employee_by_qr_hash(test_qr)
+delete_employee_by_qr_hash(qr_hash2)
 
-#print("\n--- Weryfikacja Usunięcia ---")
-#deleted_check = get_status_by_qr_hash(test_qr)
-#print(f"Status po usunięciu: {deleted_check}")
+#get_logs(id2)
