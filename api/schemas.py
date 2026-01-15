@@ -21,3 +21,7 @@ class VectorUpdate(BaseModel):
     qr_hash: Optional[str] = None
     photo_path: Optional[str] = None
     qr_expiration_date: Optional[date] = None
+
+class ExpiryRequest(BaseModel):
+    qr_hash: str
+    new_expiry_date: date

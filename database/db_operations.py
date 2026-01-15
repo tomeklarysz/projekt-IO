@@ -187,6 +187,32 @@ def get_status(employee_id):
         cur.close()
         conn.close()
 
+def update_expiry_by_qr_hash(qr_hash, new_expiry_date):
+    """Updates the QR expiration date for a specific employee."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            UPDATE employees
+            SET qr_expiration_date = %s
+            WHERE qr_hash = %s;
+        """, (new_expiry_date, qr_hash))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print("Update error:", e)
+        conn.rollback()
+        return False
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 def get_status_by_qr_hash(qr_hash):
     """Retrieves the verification status based on the QR hash."""
     employee_id = get_employee_id_by_qr(qr_hash)

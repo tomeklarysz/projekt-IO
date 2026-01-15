@@ -7,10 +7,11 @@ from database.db_operations import (
     get_employee_by_qr, 
     toggle_status_by_qr_hash, 
     delete_employee_by_qr_hash,
-    get_status_by_qr_hash
+    get_status_by_qr_hash,
+    update_expiry_by_qr_hash
 )
 from database.queries import upsert_employee_vector
-from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate
+from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate, ExpiryRequest
 
 app = FastAPI(title="Face Auth System API")
 
@@ -64,6 +65,14 @@ def get_employee_endpoint(qr_hash: str):
     if not employee_data:
         raise HTTPException(status_code=404, detail="Employee not found")
     return employee_data
+
+@app.put("/employees/expiry")
+def update_expiry_endpoint(request: ExpiryRequest):
+    success = update_expiry_by_qr_hash(request.qr_hash, request.new_expiry_date)
+    if not success:
+        raise HTTPException(status_code=404, detail="Employee not found to update expiry")
+    return {"message": "Expiry date updated successfully"}
+
 
 @app.get("/employees/status/{qr_hash}")
 def get_status_endpoint(qr_hash: str):
