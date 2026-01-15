@@ -214,6 +214,41 @@ def update_expiry_by_qr_hash(qr_hash, new_expiry_date):
         if conn:
             conn.close()
 
+def get_all_employees():
+    """
+    Fetches all employees with their ID, name, and verification status.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT e.qr_hash, e.first_name, e.last_name, vs.is_confirmed
+            FROM employees e
+            LEFT JOIN verification_statuses vs ON e.id = vs.employee_id
+            ORDER BY e.id DESC;
+        """)
+        
+        rows = cur.fetchall()
+        employees = []
+        for row in rows:
+            employees.append({
+                "qr_hash": row[0],
+                "first_name": row[1],
+                "last_name": row[2],
+                "status": "Active" if row[3] else "Inactive" 
+            })
+            
+        return employees
+    except Exception as e:
+        print(f"Error fetching all employees: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+
 def get_status_by_qr_hash(qr_hash):
     """Retrieves the verification status based on the QR hash."""
     employee_id = get_employee_id_by_qr(qr_hash)
