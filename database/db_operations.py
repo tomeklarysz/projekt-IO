@@ -249,6 +249,81 @@ def get_all_employees():
         if conn:
             conn.close()
 
+def update_employee_info(qr_hash, first_name=None, last_name=None, photo_path=None):
+    """
+    Updates employee information. If photo_path is provided, recalculates the face vector.
+    """
+    conn = get_db_connection()
+    if not conn:
+        print("Error: Database connection failed.")
+        return False
+
+    employee_id = get_employee_id_by_qr(qr_hash)
+    if not employee_id:
+        print(f"Error: Employee with QR {qr_hash} not found.")
+        conn.close()
+        return False
+
+    vector_features = None
+    if photo_path:
+        print(f"Updating photo, recalculating vectors from: {photo_path}")
+        recognizer = FaceRecognizer()
+        image = recognizer.load_image_file(photo_path)
+        if image is None:
+            print(f"Error: Could not load image from path: {photo_path}")
+            conn.close()
+            return False
+            
+        vector_features = recognizer.get_face_encoding(image)
+        if vector_features is None:
+            print("Error: Could not extract face features from the new photo.")
+            conn.close()
+            return False
+            
+        if hasattr(vector_features, 'tolist'):
+            vector_features = vector_features.tolist()
+
+    try:
+        cur = conn.cursor()
+        
+        # Build dynamic update query
+        query_parts = []
+        params = []
+        
+        if first_name:
+            query_parts.append("first_name = %s")
+            params.append(first_name)
+        if last_name:
+            query_parts.append("last_name = %s")
+            params.append(last_name)
+        if photo_path:
+            query_parts.append("photo_path = %s")
+            params.append(photo_path)
+        if vector_features is not None:
+             query_parts.append("vector_features = %s")
+             params.append(vector_features)
+             
+        if not query_parts:
+            print("No fields to update.")
+            return True # Nothing to do, but not an error
+
+        query = f"UPDATE employees SET {', '.join(query_parts)} WHERE id = %s"
+        params.append(employee_id)
+        
+        cur.execute(query, tuple(params))
+        conn.commit()
+        print(f"Employee {qr_hash} updated successfully.")
+        return True
+
+    except Exception as e:
+        print(f"Update error: {e}")
+        conn.rollback()
+        return False
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
 def get_status_by_qr_hash(qr_hash):
     """Retrieves the verification status based on the QR hash."""
     employee_id = get_employee_id_by_qr(qr_hash)

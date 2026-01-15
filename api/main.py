@@ -12,7 +12,8 @@ from database.db_operations import (
     delete_employee_by_qr_hash,
     get_status_by_qr_hash,
     update_expiry_by_qr_hash,
-    get_all_employees
+    get_all_employees,
+    update_employee_info
 )
 from database.queries import upsert_employee_vector
 from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate, ExpiryRequest
@@ -111,6 +112,20 @@ def get_employee_endpoint(qr_hash: str):
     if not employee_data:
         raise HTTPException(status_code=404, detail="Employee not found")
     return employee_data
+
+@app.put("/employees/{qr_hash}")
+def update_employee_endpoint(
+    qr_hash: str,
+    first_name: str = Form(None),
+    last_name: str = Form(None),
+    photo_path: str = Form(None)
+):
+    success = update_employee_info(qr_hash, first_name, last_name, photo_path)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update employee. Check if employee exists or if photo is valid.")
+        
+    return {"message": "Employee updated successfully"}
 
 @app.put("/employees/expiry")
 def update_expiry_endpoint(request: ExpiryRequest):
