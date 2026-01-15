@@ -3,23 +3,21 @@ import { useEffect, useState } from "react";
 type MenuProps = {
     onGoToLogs: () => void;
     onOpenAddWorker: () => void;
-    onGoToDetails: (id: number) => void;
+    onGoToDetails: (qr_hash: string) => void;
 };
 
 interface Worker {
-    id: number;
+    qr_hash: string;
     first_name: string;
     last_name: string;
     status: string;
 }
 
 export default function Menu({ onGoToLogs, onOpenAddWorker, onGoToDetails }: MenuProps) {
-    const [workers, setWorkers] = useState<Worker[]>([
-        { id: 999, first_name: "Test", last_name: "Worker", status: "Active" }
-    ]);
+    const [workers, setWorkers] = useState<Worker[]>([]);
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/workers')
+        fetch('http://localhost:8000/api/workers')
             .then(res => res.json())
             .then(data => setWorkers(data))
             .catch(err => console.error("Error fetching workers:", err));
@@ -44,14 +42,14 @@ export default function Menu({ onGoToLogs, onOpenAddWorker, onGoToDetails }: Men
 
             <div style={{marginTop: '3rem'}}>
                 <h2 style={{marginBottom: '1rem'}}>Current Workers</h2>
-                <div className="card">
+                <div className="card" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {workers.length === 0 ? (
                         <p style={{color: 'var(--text-light)', padding: '1rem'}}>No workers found.</p>
                     ) : (
                         <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
                             {workers.map(worker => (
-                                <li key={worker.id} 
-                                    onClick={() => onGoToDetails(worker.id)}
+                                <li key={worker.qr_hash} 
+                                    onClick={() => onGoToDetails(worker.qr_hash)}
                                     style={{
                                         padding: '1rem', 
                                         borderBottom: '1px solid #eee',

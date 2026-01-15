@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import shutil
+import os
 
 # Imports from your modules (ensure paths are correct)
 from database.db_operations import (
@@ -7,10 +10,12 @@ from database.db_operations import (
     get_employee_by_qr, 
     toggle_status_by_qr_hash, 
     delete_employee_by_qr_hash,
-    get_status_by_qr_hash
+    get_status_by_qr_hash,
+    update_expiry_by_qr_hash,
+    get_all_employees
 )
 from database.queries import upsert_employee_vector
-from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate
+from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate, ExpiryRequest
 
 app = FastAPI(title="Face Auth System API")
 
@@ -29,23 +34,57 @@ app.add_middleware(
 def read_root():
     return {"message": "API is running correctly without creating local folders"}
 
+@app.get("/api/workers")
+def get_workers_endpoint():
+    """
+    Returns a list of all workers (employees) with their name and status.
+    """
+    workers = get_all_employees()
+    return workers
+
+@app.post("/upload")
+async def upload_photo(file: UploadFile = File(...)):
+    try:
+        os.makedirs("images", exist_ok=True)
+        # Use simple filename or add timestamp to prevent collisions in production
+        file_location = f"images/{file.filename}"
+        
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Return relative path, e.g. "images/filename.jpg"
+        # This allows the database to store a clean relative path instead of an absolute system path.
+        return {"file_path": file_location}
+    except Exception as e:
+        print(f"Upload Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/employees/add")
 def create_employee_endpoint(
     first_name: str = Form(...),
     last_name: str = Form(...),
-    photo_path: str = Form(...)  # Path is received as text string, not binary file
+    photo_path: str = Form(...)
 ):
     """
     Adds an employee based on an existing file path on the disk.
+    Accepts Form data: first_name, last_name, photo_path
     """
     try:
         # Calls add_employee, which uses recognizer.load_image_file(photo_path) internally
         new_id = add_employee(first_name, last_name, photo_path)
         
         if new_id is None:
+            # If database insertion or face detection failed, delete the uploaded image
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                    print(f"Cleanup: Deleted file {photo_path} due to registration failure.")
+                except OSError as cleanup_error:
+                    print(f"Cleanup Error: Failed to delete {photo_path}: {cleanup_error}")
+
             raise HTTPException(
                 status_code=500, 
-                detail="Error: Face not detected in the image or database error."
+                detail="Error: Face not detected in the image or database error. Image file has been removed."
             )
             
         return {
@@ -54,6 +93,14 @@ def create_employee_endpoint(
         }
         
     except Exception as e:
+        # If any unexpected exception occurs, also attempt to clean up the image
+        if os.path.exists(photo_path):
+            try:
+                os.remove(photo_path)
+                print(f"Cleanup: Deleted file {photo_path} due to exception.")
+            except OSError as cleanup_error:
+                print(f"Cleanup Error: Failed to delete {photo_path}: {cleanup_error}")
+                
         # Log error to server console for easier debugging
         print(f"API Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -64,6 +111,14 @@ def get_employee_endpoint(qr_hash: str):
     if not employee_data:
         raise HTTPException(status_code=404, detail="Employee not found")
     return employee_data
+
+@app.put("/employees/expiry")
+def update_expiry_endpoint(request: ExpiryRequest):
+    success = update_expiry_by_qr_hash(request.qr_hash, request.new_expiry_date)
+    if not success:
+        raise HTTPException(status_code=404, detail="Employee not found to update expiry")
+    return {"message": "Expiry date updated successfully"}
+
 
 @app.get("/employees/status/{qr_hash}")
 def get_status_endpoint(qr_hash: str):
