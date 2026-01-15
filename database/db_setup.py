@@ -34,7 +34,6 @@ def get_db_connection():
         return None
 
 def create_tables(conn):
-    """Creates the 'employees' and 'verification_statuses' tables with final requested fields."""
     cur = conn.cursor()
     try:
         cur.execute("""
@@ -48,7 +47,6 @@ def create_tables(conn):
                 qr_expiration_date DATE
             );
         """)
-        print("Table 'employees' created successfully.")
 
         # Check/Add qr_expiration_date if it doesn't exist (migration)
         cur.execute("""
@@ -61,17 +59,18 @@ def create_tables(conn):
             print("Column 'qr_expiration_date' added to 'employees'.")
 
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS verification_statuses (
+            CREATE TABLE IF NOT EXISTS verification_logs (
                 id SERIAL PRIMARY KEY,
                 employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-                is_confirmed BOOLEAN NOT NULL
+                status BOOLEAN NOT NULL,
+                reason VARCHAR(255),
+                event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        print("Table 'verification_statuses' created successfully.")
-
         conn.commit()
-    except (Exception, psycopg2.Error) as error:
-        print(f"Error during table creation: {error}")
+        print("Table 'verification_logs' created successfully.")
+    except Exception as e:
+        print(f"Error during table creation: {e}")
         conn.rollback()
     finally:
         cur.close()

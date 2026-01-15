@@ -9,7 +9,8 @@ from face_auth.authenticator import FaceAuthenticator
 from face_auth.camera import Camera
 from QR.scanner import scan_qr_code
 
-from database.db_operations import toggle_status_by_qr_hash
+# Dodany import do sprawdzania statusu
+from database.db_operations import log_verification_event, get_latest_status
 
 def main():
     print("--- Access Control System ---")
@@ -24,7 +25,6 @@ def main():
                 print("\n--- READY For Next User ---")
                 
                 # Step 1: Scan QR Code
-                # This will block until a valid QR is found (returning user dict) or 'QUIT' is returned
                 scan_result = scan_qr_code(camera)
                 
                 if scan_result == "QUIT":
@@ -32,7 +32,6 @@ def main():
                     break
                 
                 if not scan_result:
-                    # Scanner returned None likely due to error, retry loop
                     time.sleep(1)
                     continue
                     
@@ -40,19 +39,27 @@ def main():
                 print(f"QR Validated. Proceeding to Face Auth for User: {user_data.get('first_name')}")
                 
                 # Step 2: Face Authentication
-                # We pass the same camera instance and the user data
                 success, message = auth.verify_user(user_data, camera, timeout=10)
                 
                 print(f"\nAuthentication Result: {'SUCCESS' if success else 'FAILURE'}")
                 print(f"Details: {message}")
                 
                 if success:
-                    print("Access GRANTED.")
-                    toggle_status_by_qr_hash(user_data.get('qr_hash'))
-                    time.sleep(2) # Show success message for a bit
+                    last_record = get_latest_status(user_data.get('id'))
+                    is_at_work = last_record[2] if last_record else False
+                    
+                    if not is_at_work:
+                        print("Access GRANTED.")
+                        log_verification_event(user_data.get('qr_hash'), True, "Access Granted")
+                    else:
+                        print(f"Access DENIED. User {user_data.get('first_name')} is no longer at work.")
+                        log_verification_event(user_data.get('qr_hash'), False, f"User {user_data.get('first_name')} is no longer at work")
+                    
+                    time.sleep(2) 
                 else:
                     print("Access DENIED.")
-                    time.sleep(2) # Show failure message for a bit
+                    log_verification_event(user_data.get('qr_hash'), False, "Access Denied")
+                    time.sleep(2)
 
     except Exception as e:
         print(f"Critical System Error: {e}")
