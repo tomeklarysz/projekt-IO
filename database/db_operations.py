@@ -143,7 +143,7 @@ def get_employee_by_qr(qr_hash):
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, first_name, vector_features, photo_path, qr_expiration_date FROM employees WHERE qr_hash = %s",
+            "SELECT id, first_name, vector_features, photo_path, qr_expiration_date, last_name FROM employees WHERE qr_hash = %s",
             (qr_hash,)
         )
         result = cur.fetchone()
@@ -154,7 +154,8 @@ def get_employee_by_qr(qr_hash):
                 "vector_features": result[2],
                 "photo_path": result[3],
                 "qr_expiration_date": result[4],
-                "qr_hash": qr_hash
+                "qr_hash": qr_hash,
+                "qr_path": f"generated_qrs/qr_{result[1]}_{result[5]}.png"
             }
         return None
     except Exception as e:
