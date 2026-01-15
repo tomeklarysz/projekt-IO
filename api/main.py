@@ -43,9 +43,9 @@ async def upload_photo(file: UploadFile = File(...)):
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Return absolute path
-        abs_path = os.path.abspath(file_location)
-        return {"file_path": abs_path}
+        # Return relative path, e.g. "images/filename.jpg"
+        # This allows the database to store a clean relative path instead of an absolute system path.
+        return {"file_path": file_location}
     except Exception as e:
         print(f"Upload Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -65,9 +65,17 @@ def create_employee_endpoint(
         new_id = add_employee(first_name, last_name, photo_path)
         
         if new_id is None:
+            # If database insertion or face detection failed, delete the uploaded image
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                    print(f"Cleanup: Deleted file {photo_path} due to registration failure.")
+                except OSError as cleanup_error:
+                    print(f"Cleanup Error: Failed to delete {photo_path}: {cleanup_error}")
+
             raise HTTPException(
                 status_code=500, 
-                detail="Error: Face not detected in the image or database error."
+                detail="Error: Face not detected in the image or database error. Image file has been removed."
             )
             
         return {
@@ -76,6 +84,14 @@ def create_employee_endpoint(
         }
         
     except Exception as e:
+        # If any unexpected exception occurs, also attempt to clean up the image
+        if os.path.exists(photo_path):
+            try:
+                os.remove(photo_path)
+                print(f"Cleanup: Deleted file {photo_path} due to exception.")
+            except OSError as cleanup_error:
+                print(f"Cleanup Error: Failed to delete {photo_path}: {cleanup_error}")
+                
         # Log error to server console for easier debugging
         print(f"API Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
