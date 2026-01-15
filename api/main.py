@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import shutil
 import os
@@ -8,9 +9,7 @@ import os
 from database.db_operations import (
     add_employee, 
     get_employee_by_qr, 
-    toggle_status_by_qr_hash, 
     delete_employee_by_qr_hash,
-    get_status_by_qr_hash,
     update_expiry_by_qr_hash,
     get_all_employees
 )
@@ -27,6 +26,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Ensure directories exist
+os.makedirs("generated_qrs", exist_ok=True)
+os.makedirs("images", exist_ok=True)
+
+# Mount static files to serve images and QRs
+app.mount("/generated_qrs", StaticFiles(directory="generated_qrs"), name="generated_qrs")
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # --- ENDPOINTS ---
 

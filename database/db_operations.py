@@ -350,3 +350,43 @@ def get_logs(employee_id):
     finally:
         cur.close()
         conn.close()
+
+def get_all_employees():
+    """
+    Fetches all employees with their ID, name, and verification status.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    try:
+        cur = conn.cursor()
+        # Fetch status from the latest entry in verification_logs for each employee
+        cur.execute("""
+            SELECT e.qr_hash, e.first_name, e.last_name, vl.status
+            FROM employees e
+            LEFT JOIN (
+                SELECT DISTINCT ON (employee_id) employee_id, status
+                FROM verification_logs
+                ORDER BY employee_id, event_time DESC
+            ) vl ON e.id = vl.employee_id
+            ORDER BY e.id DESC;
+        """)
+        
+        rows = cur.fetchall()
+        employees = []
+        for row in rows:
+            employees.append({
+                "qr_hash": row[0],
+                "first_name": row[1],
+                "last_name": row[2],
+                "status": "Active" if row[3] else "Inactive" 
+            })
+            
+        return employees
+    except Exception as e:
+        print(f"Error fetching all employees: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()

@@ -10,7 +10,7 @@ type Page = "menu" | "logs" | "details";
 
 export default function App() {
     const [page, setPage] = useState<Page>("menu");
-    const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+    const [selectedQrHash, setSelectedQrHash] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [addedWorkerName, setAddedWorkerName] = useState("");
@@ -38,8 +38,8 @@ export default function App() {
         setIsSuccessModalOpen(true);
     }
 
-    function handleGoToDetails(workerId: number) {
-        setSelectedWorkerId(workerId);
+    function handleGoToDetails(qrHash: string) {
+        setSelectedQrHash(qrHash);
         setPage("details");
     }
 
@@ -71,7 +71,7 @@ export default function App() {
                     <Logs onGoToMenu={() => setPage("menu")} />
                 ) : (
                     <Details 
-                        workerId={selectedWorkerId!} 
+                        qrHash={selectedQrHash!} 
                         onGoToMenu={() => setPage("menu")} 
                     />
                 )}
