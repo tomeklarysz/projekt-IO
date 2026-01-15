@@ -11,7 +11,8 @@ from database.db_operations import (
     toggle_status_by_qr_hash, 
     delete_employee_by_qr_hash,
     get_status_by_qr_hash,
-    update_expiry_by_qr_hash
+    update_expiry_by_qr_hash,
+    get_all_employees
 )
 from database.queries import upsert_employee_vector
 from api.schemas import EmployeeResponse, StatusResponse, VectorUpdate, ExpiryRequest
@@ -32,6 +33,14 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"message": "API is running correctly without creating local folders"}
+
+@app.get("/api/workers")
+def get_workers_endpoint():
+    """
+    Returns a list of all workers (employees) with their name and status.
+    """
+    workers = get_all_employees()
+    return workers
 
 @app.post("/upload")
 async def upload_photo(file: UploadFile = File(...)):
