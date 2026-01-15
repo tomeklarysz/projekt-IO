@@ -51,7 +51,9 @@ def add_employee(first_name, last_name, photo_path):
     # --- 2. DATABASE INSERTION ---
     
     qr_hash = qr_generator.generate_unique_qr_hash()
+    qr_expiration_date = qr_generator.create_qr_expiration_date()
     print(f"Generated QR Hash: {qr_hash}")
+    print(f"Generated QR Expiration Date: {qr_expiration_date}")
     
     conn = get_db_connection()
     if not conn:
@@ -63,10 +65,10 @@ def add_employee(first_name, last_name, photo_path):
     try:
         # INSERT into employees table
         cur.execute("""
-            INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO employees (first_name, last_name, qr_hash, vector_features, photo_path, qr_expiration_date)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
-        """, (first_name, last_name, qr_hash, vector_features, photo_path))
+        """, (first_name, last_name, qr_hash, vector_features, photo_path, qr_expiration_date))
 
         employee_id = cur.fetchone()[0]
 
@@ -141,7 +143,7 @@ def get_employee_by_qr(qr_hash):
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, first_name, vector_features, photo_path FROM employees WHERE qr_hash = %s",
+            "SELECT id, first_name, vector_features, photo_path, qr_expiration_date FROM employees WHERE qr_hash = %s",
             (qr_hash,)
         )
         result = cur.fetchone()
@@ -151,6 +153,7 @@ def get_employee_by_qr(qr_hash):
                 "first_name": result[1],
                 "vector_features": result[2],
                 "photo_path": result[3],
+                "qr_expiration_date": result[4],
                 "qr_hash": qr_hash
             }
         return None
@@ -183,6 +186,32 @@ def get_status(employee_id):
     finally:
         cur.close()
         conn.close()
+
+def update_expiry_by_qr_hash(qr_hash, new_expiry_date):
+    """Updates the QR expiration date for a specific employee."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            UPDATE employees
+            SET qr_expiration_date = %s
+            WHERE qr_hash = %s;
+        """, (new_expiry_date, qr_hash))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print("Update error:", e)
+        conn.rollback()
+        return False
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 def get_status_by_qr_hash(qr_hash):
     """Retrieves the verification status based on the QR hash."""

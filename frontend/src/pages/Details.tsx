@@ -58,60 +58,60 @@ export default function Details({ workerId, onGoToMenu }: DetailsProps) {
     }, [workerId]);
 
     const handleUpdateExpiry = () => {
-         fetch(`http://localhost:5000/api/workers/${workerId}/qr/expiry`, {
+        fetch(`http://localhost:8000/employees/expiry`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ expiration_date: newExpiryDate })
+            body: JSON.stringify({ qr_hash: workerId, new_expiry_date: newExpiryDate })
         })
-        .then(() => alert("Expiration date updated!"))
-        .catch(err => console.error("Error updating expiry:", err));
+            .then(() => alert("Expiration date updated!"))
+            .catch(err => console.error("Error updating expiry:", err));
     };
 
     if (!worker) {
-        return <div style={{padding: '2rem', textAlign: 'center'}}>Loading worker details...</div>;
+        return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading worker details...</div>;
     }
 
     return (
         <div>
-            <div style={{display: 'flex', alignItems: 'center', marginBottom: '2rem'}}>
-                <button 
-                    type="button" 
-                    className="btn btn-secondary" 
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
+                <button
+                    type="button"
+                    className="btn btn-secondary"
                     onClick={onGoToMenu}
-                    style={{marginRight: '1rem'}}
+                    style={{ marginRight: '1rem' }}
                 >
                     ← Back
                 </button>
-                <h1 style={{margin: 0}}>Worker Details</h1>
+                <h1 style={{ margin: 0 }}>Worker Details</h1>
             </div>
 
-            <div className="dashboard-grid" style={{gridTemplateColumns: '2fr 1fr', gap: '2rem'}}>
+            <div className="dashboard-grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
                 {/* Main Info Card */}
                 <div className="card">
-                    <h2 style={{marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1.5rem'}}>
+                    <h2 style={{ marginTop: 0, borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
                         {worker.first_name} {worker.last_name}
                     </h2>
-                    
-                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         <div>
-                            <p style={{color: 'var(--text-light)', marginBottom: '0.25rem'}}>Worker ID</p>
-                            <p style={{fontSize: '1.1rem', fontWeight: 500}}>{worker.id}</p>
+                            <p style={{ color: 'var(--text-light)', marginBottom: '0.25rem' }}>Worker ID</p>
+                            <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>{worker.id}</p>
                         </div>
-                        
+
                         <div>
-                             <p style={{color: 'var(--text-light)', marginBottom: '0.25rem'}}>Latest Action</p>
-                             <p>{logs.length > 0 && logs[0] ? logs[0].action : 'No recent activity'}</p>
+                            <p style={{ color: 'var(--text-light)', marginBottom: '0.25rem' }}>Latest Action</p>
+                            <p>{logs.length > 0 && logs[0] ? logs[0].action : 'No recent activity'}</p>
                         </div>
                     </div>
 
-                    <div style={{marginTop: '2rem'}}>
-                        <h3 style={{fontSize: '1.1rem'}}>Photos</h3>
-                        <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1rem 0'}}>
+                    <div style={{ marginTop: '2rem' }}>
+                        <h3 style={{ fontSize: '1.1rem' }}>Photos</h3>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1rem 0' }}>
                             {/* Placeholder for photos */}
-                            <div style={{width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 👤
                             </div>
-                            <div style={{width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 👤
                             </div>
                         </div>
@@ -122,24 +122,24 @@ export default function Details({ workerId, onGoToMenu }: DetailsProps) {
                 </div>
 
                 {/* QR Code Card */}
-                <div className="card" style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                    <h3 style={{marginTop: 0}}>QR Access Code</h3>
-                    
-                    <div style={{margin: '1.5rem 0', padding: '1rem', background: 'white', border: '1px solid #eee'}}>
-                        <img 
-                            src={worker.qr_code_url} 
-                            alt="Worker QR Code" 
-                            style={{display: 'block', maxWidth: '100%', width: '150px', height: '150px'}}
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <h3 style={{ marginTop: 0 }}>QR Access Code</h3>
+
+                    <div style={{ margin: '1.5rem 0', padding: '1rem', background: 'white', border: '1px solid #eee' }}>
+                        <img
+                            src={worker.qr_code_url}
+                            alt="Worker QR Code"
+                            style={{ display: 'block', maxWidth: '100%', width: '150px', height: '150px' }}
                         />
                     </div>
 
-                    <div style={{width: '100%'}}>
-                        <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-light)'}}>
+                    <div style={{ width: '100%' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
                             Expires On
                         </label>
-                        <div style={{display: 'flex', gap: '0.5rem'}}>
-                            <input 
-                                type="date" 
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <input
+                                type="date"
                                 className="form-control"
                                 value={newExpiryDate}
                                 onChange={(e) => setNewExpiryDate(e.target.value)}
@@ -153,24 +153,24 @@ export default function Details({ workerId, onGoToMenu }: DetailsProps) {
             </div>
 
             {/* Recent Logs Section */}
-            <div style={{marginTop: '2rem'}}>
+            <div style={{ marginTop: '2rem' }}>
                 <h3>Recent Activity</h3>
                 <div className="card">
                     {logs.length === 0 ? (
-                        <p style={{color: 'var(--text-light)', padding: '1rem'}}>No recent logs found.</p>
+                        <p style={{ color: 'var(--text-light)', padding: '1rem' }}>No recent logs found.</p>
                     ) : (
-                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{textAlign: 'left', borderBottom: '1px solid var(--secondary-color)'}}>
-                                    <th style={{padding: '0.75rem'}}>Time</th>
-                                    <th style={{padding: '0.75rem'}}>Action</th>
+                                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--secondary-color)' }}>
+                                    <th style={{ padding: '0.75rem' }}>Time</th>
+                                    <th style={{ padding: '0.75rem' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {logs.map(log => (
-                                    <tr key={log.id} style={{borderBottom: '1px solid #eee'}}>
-                                        <td style={{padding: '0.75rem'}}>{log.timestamp}</td>
-                                        <td style={{padding: '0.75rem'}}>{log.action}</td>
+                                    <tr key={log.id} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '0.75rem' }}>{log.timestamp}</td>
+                                        <td style={{ padding: '0.75rem' }}>{log.action}</td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -1,6 +1,7 @@
 import cv2
 from database.db_operations import get_employee_by_qr
 import time
+from datetime import date
 
 def scan_qr_code(camera_instance):
     """
@@ -28,6 +29,23 @@ def scan_qr_code(camera_instance):
             # checking against qr_hash
             employee = get_employee_by_qr(data)
             if employee:
+                today = date.today()
+                exp_date = employee.get('qr_expiration_date')
+
+                if exp_date:
+                    if hasattr(exp_date, 'date'):
+                        exp_date = exp_date.date()
+                        
+                    if exp_date <= today:
+                        print(f"PERMISSION DENIED: QR code for '{employee['first_name']}' has EXPIRED (Date: {exp_date}).")
+                        cv2.putText(frame, "QR EXPIRED", (50, 50), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                        cv2.imshow("Access Control", frame)
+                        cv2.waitKey(2000)
+                        # Go to next iteration (do not return employee)
+                        continue 
+
+                # If we are here, either exp_date is None (no expiry) or it is >= today (valid)
                 print(f"SUCCESS: User '{employee['first_name']}' found via QR.")
                 
                 # Visual Feedback: Draw success message
@@ -42,6 +60,7 @@ def scan_qr_code(camera_instance):
                 print("PERMISSION DENIED: QR code not recognized.")
                 # Prevent spamming the message
                 time.sleep(2)
+
 
         cv2.imshow("Access Control", frame)
 
