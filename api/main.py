@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import shutil
+import os
 
 # Imports from your modules (ensure paths are correct)
 from database.db_operations import (
@@ -29,14 +32,32 @@ app.add_middleware(
 def read_root():
     return {"message": "API is running correctly without creating local folders"}
 
+@app.post("/upload")
+async def upload_photo(file: UploadFile = File(...)):
+    try:
+        os.makedirs("images", exist_ok=True)
+        # Use simple filename or add timestamp to prevent collisions in production
+        file_location = f"images/{file.filename}"
+        
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Return absolute path
+        abs_path = os.path.abspath(file_location)
+        return {"file_path": abs_path}
+    except Exception as e:
+        print(f"Upload Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/employees/add")
 def create_employee_endpoint(
     first_name: str = Form(...),
     last_name: str = Form(...),
-    photo_path: str = Form(...)  # Path is received as text string, not binary file
+    photo_path: str = Form(...)
 ):
     """
     Adds an employee based on an existing file path on the disk.
+    Accepts Form data: first_name, last_name, photo_path
     """
     try:
         # Calls add_employee, which uses recognizer.load_image_file(photo_path) internally

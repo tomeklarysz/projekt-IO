@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 type AddModalProps = {
     onClose: () => void;
@@ -8,27 +8,55 @@ type AddModalProps = {
 export default function AddModal({ onClose, onAdd }: AddModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleRegister = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/register', {
+            if (!selectedFile) {
+                alert("Please select a photo first.");
+                return;
+            }
+
+            // Step 1: Upload Photo
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            const uploadResponse = await fetch('http://localhost:8000/upload', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName
-                }),
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const errText = await uploadResponse.text();
+                throw new Error(`Upload failed: ${errText}`);
+            }
+
+            const uploadData = await uploadResponse.json();
+            const photoPath = uploadData.file_path;
+
+            // Step 2: Register Employee with Photo Path
+            const formDataRegister = new FormData();
+            formDataRegister.append('first_name', firstName);
+            formDataRegister.append('last_name', lastName);
+            formDataRegister.append('photo_path', photoPath);
+
+            const response = await fetch('http://localhost:8000/employees/add', {
+                method: 'POST',
+                body: formDataRegister,
             });
 
             if (response.ok) {
                 onAdd(firstName, lastName);
+                onClose();
             } else {
-                console.error("Failed to register worker");
+                const errText = await response.text();
+                console.error("Failed to register worker:", errText);
+                alert("Failed to register worker: " + errText);
             }
         } catch (error) {
             console.error("Error registering worker:", error);
+            alert("Error: " + error);
         }
     };
 
@@ -71,11 +99,27 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                 </div>
 
                 <div className="input-group" style={{marginTop: '1.5rem', marginBottom: '0'}}>
-                     <button type="button" className="btn btn-secondary" style={{width: '100%'}}>
-                        📷 Upload Worker Photos
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        style={{display: 'none'}} 
+                        accept="image/*"
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                                setSelectedFile(e.target.files[0]);
+                            }
+                        }}
+                    />
+                     <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        style={{width: '100%'}}
+                        onClick={() => fileInputRef.current?.click()}
+                     >
+                        {selectedFile ? `📷 Selected: ${selectedFile.name}` : "📷 Upload Worker Photo"}
                     </button>
                     <p style={{fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem', textAlign: 'center'}}>
-                        Please upload at least 3 clear face photos for recognition.
+                        Please upload a clear face photo for recognition.
                     </p>
                 </div>
 
@@ -87,8 +131,8 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                         type="button" 
                         className="btn btn-primary"
                         onClick={handleRegister}
-                        disabled={!firstName || !lastName}
-                        style={{opacity: (!firstName || !lastName) ? 0.6 : 1}}
+                        disabled={!firstName || !lastName || !selectedFile}
+                        style={{opacity: (!firstName || !lastName || !selectedFile) ? 0.6 : 1}}
                     >
                         Register Worker
                     </button>
