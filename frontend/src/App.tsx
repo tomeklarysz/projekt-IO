@@ -14,6 +14,7 @@ export default function App() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [addedWorkerName, setAddedWorkerName] = useState("");
+    const [refreshKey, setRefreshKey] = useState(0);
 
     function openAddModal() {
         setIsAddModalOpen(true);
@@ -25,6 +26,7 @@ export default function App() {
 
     function closeSuccessModal() {
         setIsSuccessModalOpen(false);
+        setRefreshKey(prev => prev + 1);
     }
 
     function handleAddWorker(firstName: string, lastName: string) {
@@ -66,6 +68,7 @@ export default function App() {
                         onGoToLogs={() => setPage("logs")} 
                         onOpenAddWorker={openAddModal} 
                         onGoToDetails={handleGoToDetails}
+                        refreshKey={refreshKey}
                     />
                 ) : page === "logs" ? (
                     <Logs onGoToMenu={() => setPage("menu")} />

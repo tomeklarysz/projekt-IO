@@ -4,6 +4,7 @@ type MenuProps = {
     onGoToLogs: () => void;
     onOpenAddWorker: () => void;
     onGoToDetails: (qr_hash: string) => void;
+    refreshKey?: number;
 };
 
 interface Worker {
@@ -13,7 +14,7 @@ interface Worker {
     status: string;
 }
 
-export default function Menu({ onGoToLogs, onOpenAddWorker, onGoToDetails }: MenuProps) {
+export default function Menu({ onGoToLogs, onOpenAddWorker, onGoToDetails, refreshKey = 0 }: MenuProps) {
     const [workers, setWorkers] = useState<Worker[]>([]);
 
     useEffect(() => {
@@ -21,7 +22,7 @@ export default function Menu({ onGoToLogs, onOpenAddWorker, onGoToDetails }: Men
             .then(res => res.json())
             .then(data => setWorkers(data))
             .catch(err => console.error("Error fetching workers:", err));
-    }, []);
+    }, [refreshKey]);
 
     return (
         <div>
