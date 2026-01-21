@@ -181,7 +181,7 @@ def upsert_vector_endpoint(data: VectorUpdate):
     )
     return {"status": result}
 
-@app.get("/employees/logs/{qr_hash}")
+@app.get("/api/employees/logs/{qr_hash}")
 def get_employee_logs_endpoint(qr_hash: str):
     """
     Fetches the log history for an employee based on their QR hash.
@@ -209,3 +209,23 @@ def get_employee_logs_endpoint(qr_hash: str):
         })
     
     return formatted_logs
+
+@app.get("/api/logs/all")
+def get_all_logs_endpoint():
+    """Fetches all verification logs from the database for all employees."""
+    from database.db_operations import get_db_connection
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT e.first_name, e.last_name, v.status, v.event_time, v.reason 
+            FROM verification_logs v
+            JOIN employees e ON v.employee_id = e.id
+            ORDER BY v.event_time DESC;
+        """)
+        rows = cur.fetchall()
+        return [{"first_name": r[0], "last_name": r[1], "status": r[2], 
+                 "event_time": r[3], "reason": r[4]} for r in rows]
+    finally:
+        cur.close()
+        conn.close()
