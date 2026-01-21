@@ -9,6 +9,7 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleRegister = async () => {
@@ -17,6 +18,8 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                 alert("Please select a photo first.");
                 return;
             }
+            
+            setIsLoading(true);
 
             // Step 1: Upload Photo
             const formData = new FormData();
@@ -57,6 +60,8 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
         } catch (error) {
             console.error("Error registering worker:", error);
             alert("Error: " + error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -124,17 +129,17 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                 </div>
 
                 <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={onClose}>
+                    <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
                         Cancel
                     </button>
                     <button 
                         type="button" 
                         className="btn btn-primary"
                         onClick={handleRegister}
-                        disabled={!firstName || !lastName || !selectedFile}
-                        style={{opacity: (!firstName || !lastName || !selectedFile) ? 0.6 : 1}}
+                        disabled={!firstName || !lastName || !selectedFile || isLoading}
+                        style={{opacity: (!firstName || !lastName || !selectedFile || isLoading) ? 0.6 : 1}}
                     >
-                        Register Worker
+                        {isLoading ? "Processing..." : "Register Worker"}
                     </button>
                 </div>
             </div>
