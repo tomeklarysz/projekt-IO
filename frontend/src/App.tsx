@@ -29,13 +29,8 @@ export default function App() {
         setRefreshKey(prev => prev + 1);
     }
 
-    function handleAddWorker(firstName: string, lastName: string) {
-        if (!firstName.trim()) {
-            return;
-        }
-
-        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-        setAddedWorkerName(fullName);
+    function handleAddWorker() {
+        setAddedWorkerName("New Worker"); // We returned void from AddModal, so we don't have the exact name here easily without API change.
         setIsAddModalOpen(false);
         setIsSuccessModalOpen(true);
     }
@@ -48,40 +43,40 @@ export default function App() {
     return (
         <div className="app-container">
             <header style={{
-                background: 'var(--white)', 
-                padding: '1rem 2rem', 
-                boxShadow: 'var(--shadow)', 
-                marginBottom: '3rem', 
+                background: 'var(--white)',
+                padding: '1rem 2rem',
+                boxShadow: 'var(--shadow)',
+                marginBottom: '3rem',
                 borderBottom: '1px solid var(--secondary-color)'
             }}>
-                <div style={{maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-                        <div style={{width: '32px', height: '32px', background: 'var(--primary-color)', borderRadius: '4px'}}></div>
-                        <h2 style={{margin: 0, fontSize: '1.25rem'}}>SecureGate Admin</h2>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'var(--primary-color)', borderRadius: '4px' }}></div>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>SecureGate Admin</h2>
                     </div>
                 </div>
             </header>
-            
+
             <main className="page-container">
                 {page === "menu" ? (
-                    <Menu 
-                        onGoToLogs={() => setPage("logs")} 
-                        onOpenAddWorker={openAddModal} 
+                    <Menu
+                        onGoToLogs={() => setPage("logs")}
+                        onOpenAddWorker={openAddModal}
                         onGoToDetails={handleGoToDetails}
                         refreshKey={refreshKey}
                     />
                 ) : page === "logs" ? (
                     <Logs onGoToMenu={() => setPage("menu")} />
                 ) : (
-                    <Details 
-                        qrHash={selectedQrHash!} 
-                        onGoToMenu={() => setPage("menu")} 
+                    <Details
+                        qrHash={selectedQrHash!}
+                        onGoToMenu={() => setPage("menu")}
                     />
                 )}
             </main>
 
             {isAddModalOpen ? (
-                <AddModal onClose={closeAddModal} onAdd={handleAddWorker} />
+                <AddModal onClose={closeAddModal} onSuccess={handleAddWorker} />
             ) : null}
 
             {isSuccessModalOpen ? (

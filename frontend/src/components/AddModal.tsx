@@ -1,64 +1,104 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+
+type WorkerData = {
+    firstName: string;
+    lastName: string;
+    qrHash?: string; // Needed for updates
+};
 
 type AddModalProps = {
     onClose: () => void;
-    onAdd: (firstName: string, lastName: string) => void;
+    onSuccess: () => void;
+    initialData?: WorkerData | null;
 };
 
-export default function AddModal({ onClose, onAdd }: AddModalProps) {
+export default function AddModal({ onClose, onSuccess, initialData }: AddModalProps) {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleRegister = async () => {
+    const isEditMode = !!initialData;
+
+    useEffect(() => {
+        if (initialData) {
+            setFirstName(initialData.firstName);
+            setLastName(initialData.lastName);
+        } else {
+            setFirstName("");
+            setLastName("");
+        }
+        setSelectedFile(null);
+    }, [initialData]);
+
+    const handleSubmit = async () => {
         try {
-            if (!selectedFile) {
+            if (!isEditMode && !selectedFile) {
                 alert("Please select a photo first.");
                 return;
             }
-            
+
             setIsLoading(true);
 
-            // Step 1: Upload Photo
-            const formData = new FormData();
-            formData.append('file', selectedFile);
+            let photoPath = null;
 
-            const uploadResponse = await fetch('http://localhost:8000/upload', {
-                method: 'POST',
-                body: formData
-            });
+            // Step 1: Upload Photo (if selected)
+            if (selectedFile) {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
 
-            if (!uploadResponse.ok) {
-                const errText = await uploadResponse.text();
-                throw new Error(`Upload failed: ${errText}`);
+                const uploadResponse = await fetch('http://localhost:8000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    const errText = await uploadResponse.text();
+                    throw new Error(`Upload failed: ${errText}`);
+                }
+
+                const uploadData = await uploadResponse.json();
+                photoPath = uploadData.file_path;
             }
 
-            const uploadData = await uploadResponse.json();
-            const photoPath = uploadData.file_path;
+            // Step 2: Register or Update Employee
+            const formDataEmployee = new FormData();
+            formDataEmployee.append('first_name', firstName);
+            formDataEmployee.append('last_name', lastName);
+            if (photoPath) {
+                formDataEmployee.append('photo_path', photoPath);
+            }
 
-            // Step 2: Register Employee with Photo Path
-            const formDataRegister = new FormData();
-            formDataRegister.append('first_name', firstName);
-            formDataRegister.append('last_name', lastName);
-            formDataRegister.append('photo_path', photoPath);
-
-            const response = await fetch('http://localhost:8000/employees/add', {
-                method: 'POST',
-                body: formDataRegister,
-            });
+            let response;
+            if (isEditMode && initialData?.qrHash) {
+                // UPDATE
+                response = await fetch(`http://localhost:8000/employees/${initialData.qrHash}`, {
+                    method: 'PUT',
+                    body: formDataEmployee,
+                });
+            } else {
+                // CREATE
+                // create endpoint requires photo_path
+                if (!photoPath) {
+                    throw new Error("Photo is required for new registration.");
+                }
+                response = await fetch('http://localhost:8000/employees/add', {
+                    method: 'POST',
+                    body: formDataEmployee,
+                });
+            }
 
             if (response.ok) {
-                onAdd(firstName, lastName);
+                onSuccess();
                 onClose();
             } else {
                 const errText = await response.text();
-                console.error("Failed to register worker:", errText);
-                alert("Failed to register worker: " + errText);
+                console.error("Failed to save worker:", errText);
+                alert("Failed to save worker: " + errText);
             }
         } catch (error) {
-            console.error("Error registering worker:", error);
+            console.error("Error saving worker:", error);
             alert("Error: " + error);
         } finally {
             setIsLoading(false);
@@ -66,12 +106,10 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
     };
 
     return (
-        <div className="modal-overlay" onClick={(e) => {
-            if (e.target === e.currentTarget) onClose();
-        }}>
+        <div className="modal-overlay">
             <div className="modal-content">
                 <div className="modal-header">
-                    <h3 className="modal-title">New Worker Registration</h3>
+                    <h3 className="modal-title">{isEditMode ? "Edit Worker" : "New Worker Registration"}</h3>
                     <button type="button" className="btn-close" onClick={onClose} aria-label="close">
                         ✕
                     </button>
@@ -103,11 +141,11 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                     />
                 </div>
 
-                <div className="input-group" style={{marginTop: '1.5rem', marginBottom: '0'}}>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{display: 'none'}} 
+                <div className="input-group" style={{ marginTop: '1.5rem', marginBottom: '0' }}>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
                         accept="image/*"
                         onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
@@ -115,16 +153,16 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                             }
                         }}
                     />
-                     <button 
-                        type="button" 
-                        className="btn btn-secondary" 
-                        style={{width: '100%'}}
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ width: '100%' }}
                         onClick={() => fileInputRef.current?.click()}
-                     >
-                        {selectedFile ? `📷 Selected: ${selectedFile.name}` : "📷 Upload Worker Photo"}
+                    >
+                        {selectedFile ? `📷 Selected: ${selectedFile.name}` : (isEditMode ? "📷 Update Photo (Optional)" : "📷 Upload Worker Photo")}
                     </button>
-                    <p style={{fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem', textAlign: 'center'}}>
-                        Please upload a clear face photo for recognition.
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem', textAlign: 'center' }}>
+                        {isEditMode ? "Upload only if you want to replace the current photo." : "Please upload a clear face photo for recognition."}
                     </p>
                 </div>
 
@@ -132,17 +170,18 @@ export default function AddModal({ onClose, onAdd }: AddModalProps) {
                     <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
                         Cancel
                     </button>
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         className="btn btn-primary"
-                        onClick={handleRegister}
-                        disabled={!firstName || !lastName || !selectedFile || isLoading}
-                        style={{opacity: (!firstName || !lastName || !selectedFile || isLoading) ? 0.6 : 1}}
+                        onClick={handleSubmit}
+                        disabled={!firstName || !lastName || (!isEditMode && !selectedFile) || isLoading}
+                        style={{ opacity: (!firstName || !lastName || (!isEditMode && !selectedFile) || isLoading) ? 0.6 : 1 }}
                     >
-                        {isLoading ? "Processing..." : "Register Worker"}
+                        {isLoading ? "Processing..." : (isEditMode ? "Save Changes" : "Register Worker")}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
+

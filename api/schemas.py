@@ -5,6 +5,7 @@ from datetime import date
 class EmployeeResponse(BaseModel):
     id: int
     first_name: str
+    last_name: str
     photo_path: Optional[str] = None
     qr_hash: str
     qr_expiration_date: Optional[date] = None

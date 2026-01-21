@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import AddModal from "../components/AddModal";
 
 type DetailsProps = {
     qrHash: string;
@@ -13,7 +14,7 @@ interface Log {
 
 interface WorkerDetails {
     first_name: string;
-    last_name?: string;
+    last_name: string; // Made required as per AddModal expectation
     photo_path?: string;
     qr_expiration_date?: string;
     qr_path?: string;
@@ -23,9 +24,9 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
     const [worker, setWorker] = useState<WorkerDetails | null>(null);
     const [logs, setLogs] = useState<Log[]>([]);
     const [newExpiryDate, setNewExpiryDate] = useState("");
+    const [editModalOpen, setEditModalOpen] = useState(false);
 
-    useEffect(() => {
-        // Fetch worker details using qr_hash
+    const fetchWorkerDetails = useCallback(() => {
         fetch(`http://localhost:8000/employees/${qrHash}`)
             .then(res => res.json())
             .then(data => {
@@ -37,14 +38,17 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
             .catch(err => {
                 console.error("Error fetching worker details:", err);
             });
+    }, [qrHash]);
 
+    useEffect(() => {
+        fetchWorkerDetails();
         // (Optional) Fetch logs for this worker if endpoint exists
         // fetch(`http://localhost:8000/api/workers/${qrHash}/logs`) ...
-    }, [qrHash]);
+    }, [fetchWorkerDetails]);
 
     const handleUpdateExpiry = () => {
         if (!worker) return;
-        
+
         fetch(`http://localhost:8000/employees/expiry`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -108,8 +112,11 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                 👤
                             </div>
                         </div>
-                        <button className="btn btn-secondary">
-                            📷 Update / Add Photos
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setEditModalOpen(true)}
+                        >
+                            ✏️ Edit Worker Details
                         </button>
                     </div>
                 </div>
@@ -172,6 +179,20 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                     )}
                 </div>
             </div>
+
+            {editModalOpen && (
+                <AddModal
+                    onClose={() => setEditModalOpen(false)}
+                    onSuccess={() => {
+                        fetchWorkerDetails();
+                    }}
+                    initialData={{
+                        firstName: worker.first_name,
+                        lastName: worker.last_name || "",
+                        qrHash: qrHash
+                    }}
+                />
+            )}
         </div>
     );
 }

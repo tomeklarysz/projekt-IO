@@ -68,7 +68,7 @@ def add_employee(first_name, last_name, photo_path):
         print(f"Employee inserted with ID: {employee_id}")
 
         # --- 3. QR CODE GENERATION ---
-        filename_prefix = f"qr_{first_name}_{last_name}"
+        filename_prefix = f"qr_{qr_hash}"
         qr_file_path = qr_generator.create_qr_image(qr_hash, filename_prefix)
         
         if qr_file_path:
@@ -127,6 +127,9 @@ def get_employee_by_qr(qr_hash):
         )
         result = cur.fetchone()
         if result:
+            qr_hash = qr_hash
+            qr_path = f"generated_qrs/qr_{qr_hash}.png"
+
             return {
                 "id": result[0],
                 "first_name": result[1],
@@ -134,7 +137,8 @@ def get_employee_by_qr(qr_hash):
                 "photo_path": result[3],
                 "qr_expiration_date": result[4],
                 "qr_hash": qr_hash,
-                "qr_path": f"generated_qrs/qr_{result[1]}_{result[5]}.png"
+                "qr_path": qr_path,
+                "last_name": result[5]
             }
         return None
     except Exception as e:
