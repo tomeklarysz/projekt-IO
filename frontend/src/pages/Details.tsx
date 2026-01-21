@@ -20,6 +20,7 @@ interface WorkerDetails {
     photo_path?: string;
     qr_expiration_date?: string;
     qr_path?: string;
+    status: boolean;
 }
 
 export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
@@ -125,13 +126,13 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                     }}
                                 />
                             ) : (
-                                <div style={{ 
-                                    width: '120px', 
-                                    height: '120px', 
-                                    background: '#f3f4f6', 
-                                    borderRadius: '50%', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                                <div style={{
+                                    width: '120px',
+                                    height: '120px',
+                                    background: '#f3f4f6',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     fontSize: '2.5rem',
                                     color: '#9ca3af'
@@ -151,7 +152,7 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                         </h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#374151', fontSize: '0.9rem', fontWeight: 500, background: '#f9fafb', padding: '0.2rem 0.6rem', borderRadius: '20px', border: '1px solid #f3f4f6' }}>
                                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: logs.length > 0 ? '#10b981' : '#d1d5db' }}></span>
-                                            {logs.length > 0 ? 'Active' : 'Inactive'}
+                                            {worker.status ? 'Active' : 'Inactive'}
                                         </div>
                                     </div>
                                     <p style={{ margin: '0.5rem 0 0.5rem 0', color: '#6b7280', fontSize: '0.95rem' }}>
@@ -164,43 +165,43 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     {/* Action Buttons - Minimal Icon Style */}
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button 
-                                        className="btn"
-                                        onClick={() => setEditModalOpen(true)}
-                                        title="Edit Profile"
-                                        style={{ 
-                                            padding: '0.5rem', 
-                                            background: 'transparent', 
-                                            border: '1px solid #e5e7eb', 
-                                            color: '#4b5563',
-                                            borderRadius: '6px'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#9ca3af'; e.currentTarget.style.color = '#1f2937'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = '#4b5563'; }}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                    </button>
-                                    <button 
-                                        className="btn"
-                                        onClick={() => setDeleteModalOpen(true)}
-                                        title="Delete Profile"
-                                        style={{ 
-                                            padding: '0.5rem', 
-                                            background: 'transparent', 
-                                            border: '1px solid #fee2e2', 
-                                            color: '#ef4444',
-                                            borderRadius: '6px'
-                                        }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.backgroundColor = '#fef2f2'; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#fee2e2'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                    </button>
-                                </div>
+                                        <button
+                                            className="btn"
+                                            onClick={() => setEditModalOpen(true)}
+                                            title="Edit Profile"
+                                            style={{
+                                                padding: '0.5rem',
+                                                background: 'transparent',
+                                                border: '1px solid #e5e7eb',
+                                                color: '#4b5563',
+                                                borderRadius: '6px'
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#9ca3af'; e.currentTarget.style.color = '#1f2937'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = '#4b5563'; }}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </button>
+                                        <button
+                                            className="btn"
+                                            onClick={() => setDeleteModalOpen(true)}
+                                            title="Delete Profile"
+                                            style={{
+                                                padding: '0.5rem',
+                                                background: 'transparent',
+                                                border: '1px solid #fee2e2',
+                                                color: '#ef4444',
+                                                borderRadius: '6px'
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.backgroundColor = '#fef2f2'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#fee2e2'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -232,16 +233,16 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <h3 style={{ marginTop: 0 }}>QR Access Code</h3>
 
-                    <div 
-                        style={{ 
+                    <div
+                        style={{
                             width: '100%',
                             aspectRatio: '1',
-                            margin: '1.5rem 0 1rem 0', 
-                            padding: '1rem', 
-                            background: 'white', 
+                            margin: '1.5rem 0 1rem 0',
+                            padding: '1rem',
+                            background: 'white',
                             border: '1px solid #e5e7eb',
                             borderRadius: '8px',
-                            cursor: 'pointer', 
+                            cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
@@ -264,9 +265,9 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                         />
                     </div>
-                    
-                    <button 
-                        className="btn btn-secondary" 
+
+                    <button
+                        className="btn btn-secondary"
                         onClick={() => setQrModalOpen(true)}
                         style={{ width: '100%', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                     >
@@ -313,7 +314,7 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
             <QRModal
                 isOpen={qrModalOpen}
                 onClose={() => setQrModalOpen(false)}
-                qrUrl={worker.qr_path ? `http://localhost:8000/${worker.qr_path.replace(/\\/g, '/')}` : ''}
+                qrUrl={worker.qr_path ? `http://localhost:8000/${worker.qr_path}` : ''}
                 workerName={`${worker.first_name} ${worker.last_name}`}
             />
 

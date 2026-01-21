@@ -121,9 +121,20 @@ def get_employee_by_qr(qr_hash):
     
     try:
         cur = conn.cursor()
-        cur.execute(
-            "SELECT id, first_name, vector_features, photo_path, qr_expiration_date, last_name FROM employees WHERE qr_hash = %s",
-            (qr_hash,)
+        cur.execute("""
+            SELECT e.id, 
+            e.first_name, 
+            e.vector_features, 
+            e.photo_path, 
+            e.qr_expiration_date, 
+            e.last_name, 
+            v.status 
+            FROM employees e
+            LEFT JOIN verification_logs v ON e.id = v.employee_id
+            WHERE e.qr_hash = %s
+            ORDER BY v.event_time DESC NULLS LAST
+            LIMIT 1;
+        """, (qr_hash,)
         )
         result = cur.fetchone()
         if result:
@@ -138,7 +149,8 @@ def get_employee_by_qr(qr_hash):
                 "qr_expiration_date": result[4],
                 "qr_hash": qr_hash,
                 "qr_path": qr_path,
-                "last_name": result[5]
+                "last_name": result[5],
+                "status": result[6] if result[6] is not None else False 
             }
         return None
     except Exception as e:

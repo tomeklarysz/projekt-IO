@@ -10,6 +10,7 @@ class EmployeeResponse(BaseModel):
     qr_hash: str
     qr_expiration_date: Optional[date] = None
     qr_path: Optional[str] = None
+    status: bool
 
 class StatusResponse(BaseModel):
     qr_hash: str
