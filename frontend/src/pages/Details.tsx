@@ -151,7 +151,7 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                             {worker.first_name} {worker.last_name}
                                         </h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#374151', fontSize: '0.9rem', fontWeight: 500, background: '#f9fafb', padding: '0.2rem 0.6rem', borderRadius: '20px', border: '1px solid #f3f4f6' }}>
-                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: logs.length > 0 ? '#10b981' : '#d1d5db' }}></span>
+                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: worker.status ? '#10b981' : '#d1d5db' }}></span>
                                             {worker.status ? 'Active' : 'Inactive'}
                                         </div>
                                     </div>
