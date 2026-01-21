@@ -102,15 +102,25 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                     </div>
 
                     <div style={{ marginTop: '2rem' }}>
-                        <h3 style={{ fontSize: '1.1rem' }}>Photos</h3>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1rem 0' }}>
-                            {/* Placeholder for photos */}
-                            <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                👤
-                            </div>
-                            <div style={{ width: '80px', height: '80px', background: '#eee', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                👤
-                            </div>
+                        <h3 style={{ fontSize: '1.1rem' }}>Worker Photo</h3>
+                        <div style={{ margin: '1rem 0' }}>
+                            {worker.photo_path ? (
+                                <img
+                                    src={`http://localhost:8000/${worker.photo_path.replace(/\\/g, '/')}`}
+                                    alt={`${worker.first_name} ${worker.last_name}`}
+                                    style={{
+                                        width: '150px',
+                                        height: '150px',
+                                        objectFit: 'cover',
+                                        borderRadius: '8px',
+                                        border: '1px solid #eee'
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ width: '150px', height: '150px', background: '#eee', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    👤 No Photo
+                                </div>
+                            )}
                         </div>
                         <button
                             className="btn btn-secondary"
