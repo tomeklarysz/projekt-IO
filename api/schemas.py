@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List, Any
 from datetime import date
+from datetime import datetime
 
 class EmployeeResponse(BaseModel):
     id: int
@@ -28,3 +29,10 @@ class VectorUpdate(BaseModel):
 class ExpiryRequest(BaseModel):
     qr_hash: str
     new_expiry_date: date
+
+class LogResponse(BaseModel):
+    first_name: str
+    last_name: str
+    status: bool
+    event_time: Optional[datetime]
+    reason: Optional[str]

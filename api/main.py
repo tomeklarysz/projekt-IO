@@ -180,3 +180,32 @@ def upsert_vector_endpoint(data: VectorUpdate):
         photo_path=data.photo_path
     )
     return {"status": result}
+
+@app.get("/employees/logs/{qr_hash}")
+def get_employee_logs_endpoint(qr_hash: str):
+    """
+    Fetches the log history for an employee based on their QR hash.
+    """
+    from database.db_operations import get_employee_id_by_qr, get_logs
+    
+    employee_id = get_employee_id_by_qr(qr_hash)
+    
+    if employee_id is None:
+        raise HTTPException(status_code=404, detail="Employee with the provided QR code does not exist.")
+
+    logs = get_logs(employee_id)
+    
+    if logs is None:
+        return [] 
+    
+    formatted_logs = []
+    for row in logs:
+        formatted_logs.append({
+            "first_name": row[0],
+            "last_name": row[1],
+            "status": row[2],
+            "event_time": row[3], 
+            "reason": row[4]
+        })
+    
+    return formatted_logs
