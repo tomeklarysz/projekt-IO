@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import AddModal from "../components/AddModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 type DetailsProps = {
     qrHash: string;
@@ -25,6 +26,26 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
     const [logs, setLogs] = useState<Log[]>([]);
     const [newExpiryDate, setNewExpiryDate] = useState("");
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteSuccess, setDeleteSuccess] = useState(false);
+
+    const handleDeleteWorker = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/employees/${qrHash}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setDeleteSuccess(true);
+            } else {
+                const errText = await response.text();
+                alert("Failed to delete worker: " + errText);
+            }
+        } catch (error) {
+            console.error("Error deleting worker:", error);
+            alert("Error: " + error);
+        }
+    };
 
     const fetchWorkerDetails = useCallback(() => {
         fetch(`http://localhost:8000/employees/${qrHash}`)
@@ -122,12 +143,22 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                 </div>
                             )}
                         </div>
-                        <button
-                            className="btn btn-secondary"
-                            onClick={() => setEditModalOpen(true)}
-                        >
-                            ✏️ Edit Worker Details
-                        </button>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setEditModalOpen(true)}
+                                style={{ flex: 1 }}
+                            >
+                                Edit Details
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                style={{ flex: 1, backgroundColor: '#dc3545', borderColor: '#dc3545' }}
+                                onClick={() => setDeleteModalOpen(true)}
+                            >
+                                Delete Worker
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -201,6 +232,25 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                         lastName: worker.last_name || "",
                         qrHash: qrHash
                     }}
+                />
+            )}
+
+            {deleteModalOpen && (
+                <ConfirmModal
+                    isOpen={deleteModalOpen}
+                    onClose={() => {
+                        if (deleteSuccess) onGoToMenu();
+                        setDeleteModalOpen(false);
+                    }}
+                    onConfirm={deleteSuccess ? onGoToMenu : handleDeleteWorker}
+                    title={deleteSuccess ? "Success" : "Delete Worker"}
+                    message={deleteSuccess
+                        ? "Worker has been successfully removed from the system."
+                        : `Are you sure you want to remove ${worker.first_name} ${worker.last_name} from the system? This action cannot be undone.`
+                    }
+                    confirmText={deleteSuccess ? "OK" : "Yes, Remove Worker"}
+                    cancelText={deleteSuccess ? null : "Cancel"}
+                    confirmButtonStyle={deleteSuccess ? { backgroundColor: 'var(--primary-color)', borderColor: 'var(--primary-color)' } : { backgroundColor: '#dc3545', borderColor: '#dc3545' }}
                 />
             )}
         </div>
