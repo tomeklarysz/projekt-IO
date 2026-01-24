@@ -113,6 +113,13 @@ def create_employee_endpoint(
         print(f"API Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/employees/expiry")
+def update_expiry_endpoint(request: ExpiryRequest):
+    success = update_expiry_by_qr_hash(request.qr_hash, request.new_expiry_date)
+    if not success:
+        raise HTTPException(status_code=404, detail="Employee not found to update expiry")
+    return {"message": "Expiry date updated successfully"}
+
 @app.get("/employees/{qr_hash}", response_model=EmployeeResponse)
 def get_employee_endpoint(qr_hash: str):
     employee_data = get_employee_by_qr(qr_hash)
@@ -134,12 +141,7 @@ def update_employee_endpoint(
         
     return {"message": "Employee updated successfully"}
 
-@app.put("/employees/expiry")
-def update_expiry_endpoint(request: ExpiryRequest):
-    success = update_expiry_by_qr_hash(request.qr_hash, request.new_expiry_date)
-    if not success:
-        raise HTTPException(status_code=404, detail="Employee not found to update expiry")
-    return {"message": "Expiry date updated successfully"}
+
 
 
 @app.get("/employees/status/{qr_hash}")
