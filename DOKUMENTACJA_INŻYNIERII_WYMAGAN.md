@@ -133,6 +133,41 @@ flowchart TB
 ```
 
 
+### 7. Szczegółowy opis działania systemu
+
+**1. Wykrywanie i weryfikacja kodu QR**
+Gdy pracownik zbliża się do stanowiska weryfikacyjnego, prezentuje swój unikalny kod QR (wydrukowany lub na ekranie telefonu) do kamery. System, wykorzystując bibliotekę **OpenCV**, analizuje każdą klatkę strumienia wideo. W momencie wykrycia wzorca QR, następuje jego odczytanie i zdekodowanie do postaci ciągu znaków (hash/UUID).
+Aplikacja natychmiast odpytuje bazę danych **PostgreSQL**, sprawdzając:
+a) Czy dany hash istnieje w tabeli `employees`.
+b) Czy data ważności kodu (`qr_expiration_date`) nie została przekroczona.
+Jeśli kod jest nieznany lub przeterminowany, proces zostaje przerwany z komunikatem błędu.
+
+**2. Biometryczna weryfikacja twarzy (Face Auth)**
+Po pomyślnej walidacji kodu QR, system przechodzi w tryb weryfikacji tożsamości. Wykorzystując bibliotekę **face_recognition** (opartą na `dlib`):
+1.  **Detekcja:** Z bieżącego strumienia wideo wyodrębniany jest obszar twarzy.
+2.  **Generowanie Embedingu:** Algorytm przetwarza obraz twarzy na wektor cech (embedding) – listę 128 liczb zmiennoprzecinkowych unikalną dla danej osoby.
+3.  **Porównanie:** Wygenerowany wektor jest porównywany z wektorem wzorcowym (`vector_features`) pobranym z bazy danych. Porównanie opiera się na metryce odległości euklidesowej.
+
+**3. Decyzja i interfejs użytkownika**
+System podejmuje decyzję na podstawie odległości wektorów:
+*   **Weryfikacja pozytywna (Match):** Jeśli odległość jest mniejsza niż ustalony próg (domyślnie 0.6), system wyświetla komunikat o sukcesie ("Identity Verified") oraz wizualne potwierdzenie.
+*   **Weryfikacja negatywna:** Jeśli odległość jest większa, system blokuje dostęp, wyświetlając komunikat o błędzie ("Face Mismatch").
+
+**4. Rejestracja zdarzeń (Logowanie)**
+Każda próba weryfikacji (zarówno udana, jak i nieudana) jest trwale zapisywana w tabeli `verification_logs`. Wpis zawiera:
+*   Dokładny znacznik czasu (`event_time`).
+*   Identyfikator pracownika (jeśli udało się odczytać QR).
+*   Status operacji (Boolean).
+*   Powód odrzucenia (w przypadku niepowodzenia, np. "QR Expired", "Face Mismatch").
+Umożliwia to pełną audytowalność procesu wejścia/wyjścia.
+
+**5. Panel Administracyjny i zarządzanie danymi**
+Administrator zarządza systemem poprzez interfejs webowy (Frontend w **React** komunikujący się z API **FastAPI**).
+*   **Rejestracja pracownika:** Administrator wprowadza dane osobowe i przesyła plik ze zdjęciem pracownika. System backendowy automatycznie generuje unikalny kod QR, zapisuje zdjęcie na dysku (`photo_path`) oraz oblicza i zapisuje w bazie wektor cech twarzy (`vector_features`) niezbędny do późniejszej weryfikacji.
+*   **Zarządzanie kodami QR:** Kody QR są generowane jako pliki graficzne, które administrator może pobrać z panelu i przekazać pracownikowi (np. wydrukować).
+*   **Raportowanie:** Administrator ma wgląd w historię zdarzeń poprzez tabelaryczny widok logów, co pozwala na monitorowanie czasu pracy i wykrywanie prób nieautoryzowanego dostępu.
+
+
 # 1. QR Module
 
 ## Przegląd
@@ -308,7 +343,7 @@ pip install -r requirements.txt
 
 # Dokumentacja Modułu `face_auth`
 
-Moduł `face_auth` odpowiada za uwierzytelnianie użytkowników na podstawie rozpoznawania twarzy. Wykorzystuje bibliotekę `DeepFace` do generowania i porównywania wektorów cech twarzy oraz `OpenCV` do obsługi kamery i przetwarzania obrazu.
+Moduł `face_auth` odpowiada za uwierzytelnianie użytkowników na podstawie rozpoznawania twarzy. Wykorzystuje bibliotekę `face_recognition` (opartą na `dlib`) do generowania i porównywania wektorów cech twarzy oraz `OpenCV` do obsługi kamery i przetwarzania obrazu.
 
 ## Struktura Modułu
 
@@ -316,7 +351,7 @@ Moduł składa się z następujących plików:
 - `admin.py`: Funkcje administracyjne do zarządzania danymi biometrycznymi pracowników.
 - `authenticator.py`: Główna logika uwierzytelniania użytkownika.
 - `camera.py`: Obsługa kamery internetowej.
-- `recognizer.py`: Wrapper na bibliotekę `DeepFace` do rozpoznawania twarzy.
+- `recognizer.py`: Wrapper na bibliotekę `face_recognition` do rozpoznawania twarzy.
 
 ---
 
@@ -398,14 +433,12 @@ Zwalnia zasoby kamery.
 
 ## 4. `recognizer.py`
 
-Wrapper na bibliotekę `DeepFace`, dostarczający uproszczony interfejs do generowania embeddingów i porównywania twarzy.
+Wrapper na bibliotekę `face_recognition`, dostarczający uproszczony interfejs do generowania embeddingów i porównywania twarzy.
 
 ### Klasa `FaceRecognizer`
 
-#### `__init__(model_name="Facenet")`
-Inicjalizuje model DeepFace. Wykonuje próbne wywołanie, aby załadować model do pamięci.
-- **Parametry:**
-  - `model_name` (str, domyślnie "Facenet"): Nazwa modelu do użycia (np. "Facenet", "VGG-Face", "ArcFace").
+#### `__init__()`
+Inicjalizuje klasę i wypisuje komunikat o użyciu biblioteki `face_recognition`.
 
 #### `get_face_encoding(image)`
 Oblicza embedding (wektor cech) dla pierwszej twarzy wykrytej na obrazie.
@@ -414,15 +447,15 @@ Oblicza embedding (wektor cech) dla pierwszej twarzy wykrytej na obrazie.
   - `image` (numpy.ndarray): Obraz wejściowy (BGR, format OpenCV).
 
 - **Zwraca:**
-  - `list` lub `None`: Lista floatów reprezentująca wektor twarzy, lub `None` jeśli nie wykryto twarzy.
+  - `list` lub `None`: Lista floatów (128-wymiarowa) reprezentująca wektor twarzy, lub `None` jeśli nie wykryto twarzy.
 
-#### `compare_faces(known_vector, unknown_vector, threshold=0.4)`
-Porównuje znany wektor twarzy z nieznanym wektorem używając podobieństwa cosinusowego.
+#### `compare_faces(known_vector, unknown_vector, threshold=0.6)`
+Porównuje znany wektor twarzy z nieznanym wektorem używając odległości euklidesowej.
 
 - **Parametry:**
   - `known_vector` (list/numpy.array): Wzorcowy wektor twarzy.
   - `unknown_vector` (list/numpy.array): Wektor twarzy do sprawdzenia.
-  - `threshold` (float, domyślnie 0.4): Próg akceptacji. Jeśli dystans cosinusowy jest mniejszy od progu, twarze są uznawane za zgodne.
+  - `threshold` (float, domyślnie 0.6): Próg akceptacji. Jeśli odległość (Euclidean distance) jest mniejsza od progu, twarze są uznawane za zgodne.
 
 - **Zwraca:**
   - `bool`: `True` jeśli twarze pasują, `False` w przeciwnym razie.
