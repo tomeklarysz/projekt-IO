@@ -1,4 +1,4 @@
-## Dokumentacja inżynierii wymagań
+# Dokumentacja inżynierii wymagań
 
   
 
@@ -13,7 +13,7 @@ Członkowie zespołu:
 
   
 
-1.Macierz kompetencji zespołu
+### 1. Macierz kompetencji zespołu
 
   
 
@@ -40,41 +40,66 @@ Członkowie zespołu:
   
   
 
-2.Zestaw pytań, które zostały zadane w celu uszczegółowienia zadanego projektu
+### 2. Zestaw pytań, które zostały zadane w celu uszczegółowienia zadanego projektu
 
   
 
-| Pytanie  | Odpowiedź |
+| Pytanie | Odpowiedź |
 | --- | --- |
-| Ile ma wynosić czas przetwarzania? | 5 sekund |
+| Ile ma wynosić czas przetwarzania? | Do 5 sekund |
 | Jaka ma być trafność rozpoznawania? | 90% |
 | Ile pracowników musi zawierać baza? | Minimum 20 |
 | Jaki rodzaj kamery będzie wykorzystywany? | Dowolna kamera |
-| Jak pracownik będzie otrzymywał kod QR? | Kod będzie drukowany  |
+| Jak pracownik będzie otrzymywał kod QR? | Kod będzie drukowany |
 | Czy kod QR będzie miał termin ważności? | Tak |
 | Jak mają być raportowane wyjścia i wejścia? | Wypisane w pliku txt, poprawne/niepoprawne z możliwością wyświetlenia i pobrania |
-| Co się składa na panel administracyjny? | 1.Zarządzanie pracownikami - dodanie, aktualizacja2.Dodawanie, drukowanie kodów QR3.Zmiana terminów ważności kodów QR4.Raportowanie wejść i wyjść  |
+| Co się składa na panel administracyjny? | 1. Zarządzanie pracownikami - dodanie nowego pracownika (imię, nazwisko, zdjęcie), aktualizacja danych pracownika (imię, nazwisko, zdjęcie), usuwanie pracownika<br> 2. Pobieranie, udostępnianie kodu QR pracownika <br> 3. Zmiana terminów ważności kodów QR pracownika <br> 4. Przegląd zarejestrowanych pracowników <br> 5. Przegląd zarejestrowanych prób wejść i wyjść pracowników <br> 6. Pobieranie raportu wejść i wyjść pracownika <br>
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+### 3. Format danych wejściowych i ich struktury
 
-| Kategoria | Opis |
-| --- | --- |
-| Aktorzy | Pracownik (Inicjator), Kamera, System Weryfikacji (Backend), Baza Danych (Repozytorium Danych) |
-| Opis | Weryfikacja tożsamości pracownika za pomocą dwuetapowego procesu: skanowania kodu QR, a następnie weryfikacji biometrycznej twarzy. Celem jest przyznanie/odrzucenie przepustki i rejestracja ruchu (wejście/wyjście). |
-| Dane Wejściowe | Obraz Kodu QR (binarne), Obraz/Wideo Twarzy (binarne), Typ Ruchu (Wejście/Wyjście - opcjonalne). |
-| Wyzwalacz | Pracownik pokazuje Kod QR do kamery, inicjując automatyczne skanowanie. |
-| Odpowiedź | Pozytywna: Wyświetlenie "PRZEPUSTKA PRZYZNANA" oraz rejestracja zdarzenia (Wejście/Wyjście) w systemie. |
-|| Negatywna: Wyświetlenie "ODRZUCONO" z krótkim opisem powodu (np. Nieznany Kod QR, Błąd Weryfikacji Twarzy). |
-| Uwagi | System musi szybko porównać dane biometryczne twarzy z referencyjnym zdjęciem z Bazy Danych powiązanym z zeskanowanym Kodem QR. Musi być obsłużona zarówno ścieżka wejścia, jak i wyjścia. |
+| Nazwa pola | Typ danych | Wymagalność | Opis |
+| --- | --- | --- | --- |
+| Obraz z kamery | Strumień wideo (klatki) | Wymagane | Ciągły strumień klatek obrazu (min. 640x480px) służący do detekcji QR i twarzy. |
+| Kod QR | Ciąg znaków (String) | Wymagane | Rozpoznany w klatce wideo ciąg znaków (UUID), identyfikujący pracownika. |
+| Obraz twarzy | Macierz pikseli | Wymagane | Wykadrowany z klatki fragment obrazu zawierający twarz, przekazywany do modelu biometrycznego. |
+| Identyfikator pracownika | Liczba całkowita (Integer) | Wymagane | Unikalny numer ID pracownika w bazie danych, powiązany z kodem QR. |
+| Wektor cech twarzy (Embedding) | Lista liczb zmiennoprzecinkowych | Wymagane | Reprezentacja matematyczna twarzy (np. 128-wymiarowa), służąca do porównań. |
+
+### 4. Dane przechowywane dla każdego pracownika
+
+| Nazwa Pola / Atrybutu | Typ Danych | Opis |
+| --- | --- | --- |
+| id | Integer | Unikalny identyfikator numeryczny pracownika (Klucz Główny). |
+| first_name | String | Imię pracownika. |
+| last_name | String | Nazwisko pracownika. |
+| photo_path | String | Ścieżka do pliku ze zdjęciem pracownika. |
+| qr_hash | String (Hash/UUID) | Unikalny identyfikator (hash) kodu QR. |
+| qr_expiration_date | Date | Data ważności kodu QR. |
+| vector_features | Array / List [Float] | Wektor cech biometrycznych twarzy. |
+| plik_zdjęcia (na dysku) | Image File | Fizyczny plik graficzny ze zdjęciem pracownika (JPG/PNG). |
+| plik_kod_qr (na dysku) | Image File | Fizyczny plik graficzny z wygenerowanym kodem QR (PNG). |
+
+### 5. Dane przechowywane dla każdego zdarzenia (logi)
+
+| Nazwa Pola / Atrybutu | Typ Danych | Opis |
+| --- | --- | --- |
+| id | Integer | Unikalny identyfikator zdarzenia (Klucz Główny). |
+| event_time | DateTime | Data i godzina wystąpienia zdarzenia. |
+| employee_id | Integer | Identyfikator pracownika powiązanego ze zdarzeniem. |
+| status | Boolean | Wynik weryfikacji (Prawda = Sukces, Fałsz = Porażka). |
+| reason | String | Opis powodu odrzucenia lub statusu (opcjonalne). |
+
+
+### 6. Model systemu
+
+
+<!-- | Aktor | Scenariusz / Cel | Dane Wejściowe | Wyzwalacz | Odpowiedź Systemu | Uwagi |
+| --- | --- | --- | --- | --- | --- |
+| **Pracownik** | **Weryfikacja tożsamości (Wejście/Wyjście/Sprawdzenie)** | Obraz wideo (QR + Twarz) | Pracownik pokazuje kod QR do kamery, w przypadku poprawnego kodu QR system próbuje rozpoznać twarz pokazaną do kamery. | **Sukces:** Komunikat "Identity Verified", zielona ramka, log "True".<br>**Porażka:** Komunikat błędu (np. "Access Denied"), czerwona ramka, log "False". | System działa w pętli: ciągła detekcja QR, następnie próba rozpoznania twarzy w określonym czasie. |
+| **Administrator** | **Dodanie pracownika** | Formularz: Imię, Nazwisko, Plik zdjęcia (JPG/PNG). | Kliknięcie "Add Employee" w panelu webowym. | Utworzenie rekordu w DB, wygenerowanie hasha QR, zapisanie plików, obliczenie wektora twarzy. | Wymagana walidacja czy zdjęcie zawiera twarz. |
+| **Administrator** | **Edycja pracownika** | Zmodyfikowane dane (Imię/Nazwisko/Zdjęcie). | Kliknięcie "Edit" na liście pracowników. | Aktualizacja rekordu DB. Jeśli zmieniono zdjęcie -> przeliczenie wektora. | Możliwość aktualizacji samego zdjęcia bez zmiany danych osobowych. |
+| **Administrator** | **Usunięcie pracownika** | ID Pracownika. | Kliknięcie "Delete" w panelu. | Usunięcie rekordu z DB oraz powiązanych plików z dysku. | Akcja nieodwracalna. Kaskadowe usuwanie logów. |
+| **Administrator** | **Przegląd logów** | Filtry (opcjonalnie). | Wejście w zakładkę "Logs". | Wyświetlenie tabeli z historią wejść/wyjść (Czas, Status, Kto). | Logi są tylko do odczytu. | -->
 
 
 ## Przedstawienie modelowanego systemu za pomocą diagramów
@@ -106,6 +131,41 @@ flowchart TB
     panel -- zapytanie o dane do raportu pracownika --> statuses
     qr -- zapytanie o dane pracownika --> employees
 ```
+
+
+### 7. Szczegółowy opis działania systemu
+
+**1. Wykrywanie i weryfikacja kodu QR**
+Gdy pracownik zbliża się do stanowiska weryfikacyjnego, prezentuje swój unikalny kod QR (wydrukowany lub na ekranie telefonu) do kamery. System, wykorzystując bibliotekę **OpenCV**, analizuje każdą klatkę strumienia wideo. W momencie wykrycia wzorca QR, następuje jego odczytanie i zdekodowanie do postaci ciągu znaków (hash/UUID).
+Aplikacja natychmiast odpytuje bazę danych **PostgreSQL**, sprawdzając:
+a) Czy dany hash istnieje w tabeli `employees`.
+b) Czy data ważności kodu (`qr_expiration_date`) nie została przekroczona.
+Jeśli kod jest nieznany lub przeterminowany, proces zostaje przerwany z komunikatem błędu.
+
+**2. Biometryczna weryfikacja twarzy (Face Auth)**
+Po pomyślnej walidacji kodu QR, system przechodzi w tryb weryfikacji tożsamości. Wykorzystując bibliotekę **face_recognition** (opartą na `dlib`):
+1.  **Detekcja:** Z bieżącego strumienia wideo wyodrębniany jest obszar twarzy.
+2.  **Generowanie Embedingu:** Algorytm przetwarza obraz twarzy na wektor cech (embedding) – listę 128 liczb zmiennoprzecinkowych unikalną dla danej osoby.
+3.  **Porównanie:** Wygenerowany wektor jest porównywany z wektorem wzorcowym (`vector_features`) pobranym z bazy danych. Porównanie opiera się na metryce odległości euklidesowej.
+
+**3. Decyzja i interfejs użytkownika**
+System podejmuje decyzję na podstawie odległości wektorów:
+*   **Weryfikacja pozytywna (Match):** Jeśli odległość jest mniejsza niż ustalony próg (domyślnie 0.6), system wyświetla komunikat o sukcesie ("Identity Verified") oraz wizualne potwierdzenie.
+*   **Weryfikacja negatywna:** Jeśli odległość jest większa, system blokuje dostęp, wyświetlając komunikat o błędzie ("Face Mismatch").
+
+**4. Rejestracja zdarzeń (Logowanie)**
+Każda próba weryfikacji (zarówno udana, jak i nieudana) jest trwale zapisywana w tabeli `verification_logs`. Wpis zawiera:
+*   Dokładny znacznik czasu (`event_time`).
+*   Identyfikator pracownika (jeśli udało się odczytać QR).
+*   Status operacji (Boolean).
+*   Powód odrzucenia (w przypadku niepowodzenia, np. "QR Expired", "Face Mismatch").
+Umożliwia to pełną audytowalność procesu wejścia/wyjścia.
+
+**5. Panel Administracyjny i zarządzanie danymi**
+Administrator zarządza systemem poprzez interfejs webowy (Frontend w **React** komunikujący się z API **FastAPI**).
+*   **Rejestracja pracownika:** Administrator wprowadza dane osobowe i przesyła plik ze zdjęciem pracownika. System backendowy automatycznie generuje unikalny kod QR, zapisuje zdjęcie na dysku (`photo_path`) oraz oblicza i zapisuje w bazie wektor cech twarzy (`vector_features`) niezbędny do późniejszej weryfikacji.
+*   **Zarządzanie kodami QR:** Kody QR są generowane jako pliki graficzne, które administrator może pobrać z panelu i przekazać pracownikowi (np. wydrukować).
+*   **Raportowanie:** Administrator ma wgląd w historię zdarzeń poprzez tabelaryczny widok logów, co pozwala na monitorowanie czasu pracy i wykrywanie prób nieautoryzowanego dostępu.
 
 
 # 1. QR Module
@@ -283,7 +343,7 @@ pip install -r requirements.txt
 
 # Dokumentacja Modułu `face_auth`
 
-Moduł `face_auth` odpowiada za uwierzytelnianie użytkowników na podstawie rozpoznawania twarzy. Wykorzystuje bibliotekę `DeepFace` do generowania i porównywania wektorów cech twarzy oraz `OpenCV` do obsługi kamery i przetwarzania obrazu.
+Moduł `face_auth` odpowiada za uwierzytelnianie użytkowników na podstawie rozpoznawania twarzy. Wykorzystuje bibliotekę `face_recognition` (opartą na `dlib`) do generowania i porównywania wektorów cech twarzy oraz `OpenCV` do obsługi kamery i przetwarzania obrazu.
 
 ## Struktura Modułu
 
@@ -291,7 +351,7 @@ Moduł składa się z następujących plików:
 - `admin.py`: Funkcje administracyjne do zarządzania danymi biometrycznymi pracowników.
 - `authenticator.py`: Główna logika uwierzytelniania użytkownika.
 - `camera.py`: Obsługa kamery internetowej.
-- `recognizer.py`: Wrapper na bibliotekę `DeepFace` do rozpoznawania twarzy.
+- `recognizer.py`: Wrapper na bibliotekę `face_recognition` do rozpoznawania twarzy.
 
 ---
 
@@ -373,14 +433,12 @@ Zwalnia zasoby kamery.
 
 ## 4. `recognizer.py`
 
-Wrapper na bibliotekę `DeepFace`, dostarczający uproszczony interfejs do generowania embeddingów i porównywania twarzy.
+Wrapper na bibliotekę `face_recognition`, dostarczający uproszczony interfejs do generowania embeddingów i porównywania twarzy.
 
 ### Klasa `FaceRecognizer`
 
-#### `__init__(model_name="Facenet")`
-Inicjalizuje model DeepFace. Wykonuje próbne wywołanie, aby załadować model do pamięci.
-- **Parametry:**
-  - `model_name` (str, domyślnie "Facenet"): Nazwa modelu do użycia (np. "Facenet", "VGG-Face", "ArcFace").
+#### `__init__()`
+Inicjalizuje klasę i wypisuje komunikat o użyciu biblioteki `face_recognition`.
 
 #### `get_face_encoding(image)`
 Oblicza embedding (wektor cech) dla pierwszej twarzy wykrytej na obrazie.
@@ -389,15 +447,15 @@ Oblicza embedding (wektor cech) dla pierwszej twarzy wykrytej na obrazie.
   - `image` (numpy.ndarray): Obraz wejściowy (BGR, format OpenCV).
 
 - **Zwraca:**
-  - `list` lub `None`: Lista floatów reprezentująca wektor twarzy, lub `None` jeśli nie wykryto twarzy.
+  - `list` lub `None`: Lista floatów (128-wymiarowa) reprezentująca wektor twarzy, lub `None` jeśli nie wykryto twarzy.
 
-#### `compare_faces(known_vector, unknown_vector, threshold=0.4)`
-Porównuje znany wektor twarzy z nieznanym wektorem używając podobieństwa cosinusowego.
+#### `compare_faces(known_vector, unknown_vector, threshold=0.6)`
+Porównuje znany wektor twarzy z nieznanym wektorem używając odległości euklidesowej.
 
 - **Parametry:**
   - `known_vector` (list/numpy.array): Wzorcowy wektor twarzy.
   - `unknown_vector` (list/numpy.array): Wektor twarzy do sprawdzenia.
-  - `threshold` (float, domyślnie 0.4): Próg akceptacji. Jeśli dystans cosinusowy jest mniejszy od progu, twarze są uznawane za zgodne.
+  - `threshold` (float, domyślnie 0.6): Próg akceptacji. Jeśli odległość (Euclidean distance) jest mniejsza od progu, twarze są uznawane za zgodne.
 
 - **Zwraca:**
   - `bool`: `True` jeśli twarze pasują, `False` w przeciwnym razie.

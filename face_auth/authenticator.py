@@ -52,7 +52,7 @@ class FaceAuthenticator:
         except Exception as e:
             return None, f"Error processing stored photo: {e}"
 
-    def verify_user(self, user_data, camera_instance, timeout=10):
+    def verify_user(self, user_data, camera_instance, timeout=5):
         """
         Verifies if the person in front of the camera matches the user described in user_data.
         Returns:
@@ -92,14 +92,31 @@ class FaceAuthenticator:
                     # 3. Compare
                     match = self.recognizer.compare_faces(known_vector, unknown_vector)
                     if match:
-                        # Do NOT destroy window here, keep it for the scanner loop
+                        # Draw SUCCESS message
+                        cv2.putText(frame, "IDENTITY VERIFIED", (50, 50), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                        cv2.imshow(window_name, frame)
+                        cv2.waitKey(1000) # Show success message for 1 second
+
                         return True, "Verification successful."
                     else:
                         print("Face detected but not matching...")
                 
                 time.sleep(0.1)
             
-            # Do NOT destroy window here either
+            # Timeout Reached - Draw FAILURE message
+            # We need to capture one last frame to draw on, or use the last 'frame' variable if available
+            # However, 'frame' might be old if loop didn't update recently. 
+            # It's better to just grab a fresh frame for the failure message if we are still active,
+            # but simpler to use the last displayed frame if we just want to show the status.
+            
+            # Let's verify we have a frame to draw on.
+            if 'frame' in locals():
+                cv2.putText(frame, "VERIFICATION FAILED", (50, 50), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.imshow(window_name, frame)
+                cv2.waitKey(2000) # Show failure message for 2 seconds
+
             return False, "Verification timed out. Face not matched."
         except Exception as e:
             return False, f"Error during verification: {e}"

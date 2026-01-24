@@ -57,10 +57,17 @@ def scan_qr_code(camera_instance):
 
                 return employee # Return the full user dict
             else:
+                cv2.putText(frame, "QR Not Found", (50, 50), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.imshow("Access Control", frame)
+                cv2.waitKey(2000)
                 print("PERMISSION DENIED: QR code not recognized.")
                 # Prevent spamming the message
                 time.sleep(2)
 
+
+        else:
+            cv2.putText(frame, "Scanning for QR code...", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
         cv2.imshow("Access Control", frame)
 
