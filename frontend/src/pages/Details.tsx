@@ -9,9 +9,11 @@ type DetailsProps = {
 };
 
 interface Log {
-    id: number;
-    timestamp: string;
-    action: string;
+    first_name: string;
+    last_name: string;
+    status: boolean;
+    event_time: string;
+    reason: string;
 }
 
 interface WorkerDetails {
@@ -66,9 +68,21 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
 
     useEffect(() => {
         fetchWorkerDetails();
-        // (Optional) Fetch logs for this worker if endpoint exists
-        // fetch(`http://localhost:8000/api/workers/${qrHash}/logs`) ...
-    }, [fetchWorkerDetails]);
+
+        // Fetch logs for this worker
+        fetch(`http://localhost:8000/api/employees/logs/${qrHash}`)
+            .then(res => res.json())
+            .then(data => {
+                // Ensure data is an array before setting
+                if (Array.isArray(data)) {
+                    setLogs(data);
+                } else {
+                    console.error("Logs API returned non-array:", data);
+                    setLogs([]);
+                }
+            })
+            .catch(err => console.error("Error fetching logs:", err));
+    }, [fetchWorkerDetails, qrHash]);
 
     const handleUpdateExpiry = () => {
         if (!worker) return;
@@ -215,11 +229,32 @@ export default function Details({ qrHash, onGoToMenu }: DetailsProps) {
                                 <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>No recent logs found.</p>
                             ) : (
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead style={{ borderBottom: '2px solid #f3f4f6', backgroundColor: '#f9fafb', position: 'sticky', top: 0, zIndex: 10 }}>
+                                        <tr>
+                                            <th style={{ textAlign: 'left', padding: '0.75rem 0', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Timestamp</th>
+                                            <th style={{ textAlign: 'left', padding: '0.75rem 0', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                                            <th style={{ textAlign: 'left', padding: '0.75rem 0', color: '#6b7280', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Details</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        {logs.map(log => (
-                                            <tr key={log.id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                                                <td style={{ padding: '0.5rem 0', color: '#6b7280', width: '40%' }}>{log.timestamp}</td>
-                                                <td style={{ padding: '0.5rem 0', color: '#111827', fontWeight: 500 }}>{log.action}</td>
+                                        {logs.map((log, index) => (
+                                            <tr key={index} style={{ borderBottom: '1px solid #f9fafb' }}>
+                                                <td style={{ padding: '0.5rem 0', color: '#6b7280', width: '30%' }}>
+                                                    {new Date(log.event_time).toLocaleString()}
+                                                </td>
+                                                <td style={{ padding: '0.5rem 0', width: '20%' }}>
+                                                    <span style={{
+                                                        padding: '0.2rem 0.5rem',
+                                                        borderRadius: '9999px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        backgroundColor: log.status ? '#d1fae5' : '#fee2e2',
+                                                        color: log.status ? '#065f46' : '#991b1b',
+                                                    }}>
+                                                        {log.status ? 'GRANTED' : 'DENIED'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '0.5rem 0', color: '#111827', fontWeight: 500 }}>{log.reason}</td>
                                             </tr>
                                         ))}
                                     </tbody>

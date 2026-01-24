@@ -416,20 +416,7 @@ def get_logs(employee_id):
         # 2. CHANGED to fetchall() to get a list of results
         results = cur.fetchall()
         
-        if results:
-            print(f"--- LOG HISTORY FOR ID: {employee_id} ---")
-            
-            # 3. LOOP through all records
-            for row in results:
-                first_name, last_name, status, event_time, reason = row
-                
-                display_name = f"{first_name.capitalize()} {last_name.upper()}"
-                status_display = "VERIFIED" if status else "ACCESS DENIED"
-                time_display = event_time.strftime("%H:%M:%S %d.%m.%Y") if event_time else "NO LOGS"
-                reason_display = reason if reason else "No information"
-
-                print(f"| {display_name} | STATUS: {status_display} | TIME: {time_display} | REASON: {reason_display}")
-            
+        if results:            
             return results
         else:
             print(f"Error: Employee with ID {employee_id} not found or has no logs.")

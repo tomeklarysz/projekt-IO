@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
  */
 type LogsProps = {
     onGoToMenu: () => void;
-    qrHash?: string; 
+    qrHash?: string;
 };
 
 interface Log {
@@ -23,12 +23,12 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const url = qrHash 
+        const url = qrHash
             ? `http://localhost:8000/api/employees/logs/${qrHash}`
-            : `http://localhost:8000/api/logs/all`; 
+            : `http://localhost:8000/api/logs/all`;
 
         setIsLoading(true);
-        
+
         fetch(url)
             .then(res => res.json())
             .then(data => {
@@ -44,51 +44,51 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
     return (
         <div className="logs-container">
             {/* Header section with title and navigation button */}
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1><i className="fas fa-history"></i> Access Logs</h1>
                 <button type="button" className="btn btn-secondary" onClick={onGoToMenu}>
                     ← Back to Dashboard
                 </button>
             </div>
-            
-            <div className="card" style={{padding: '0', overflow: 'hidden'}}>
+
+            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                 {/* State-based rendering: Loading vs Empty vs Data Table */}
                 {isLoading ? (
-                    <p style={{textAlign: 'center', padding: '2rem'}}>Loading historical records...</p>
+                    <p style={{ textAlign: 'center', padding: '2rem' }}>Loading historical records...</p>
                 ) : logs.length === 0 ? (
-                    <p style={{color: 'var(--text-light)', textAlign: 'center', padding: '2rem'}}>
+                    <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: '2rem' }}>
                         No activity records found in the database.
                     </p>
                 ) : (
-                    <div style={{overflowX: 'auto'}}>
-                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                    <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{textAlign: 'left', background: 'var(--secondary-color)', color: 'white'}}>
-                                    <th style={{padding: '1rem'}}>Timestamp</th>
-                                    <th style={{padding: '1rem'}}>Employee</th>
-                                    <th style={{padding: '1rem'}}>Status</th>
-                                    <th style={{padding: '1rem'}}>Reason / Details</th>
+                                <tr style={{ textAlign: 'left', background: '#374151', color: 'white', position: 'sticky', top: 0, zIndex: 10 }}>
+                                    <th style={{ padding: '1rem' }}>Timestamp</th>
+                                    <th style={{ padding: '1rem' }}>Employee</th>
+                                    <th style={{ padding: '1rem' }}>Status</th>
+                                    <th style={{ padding: '1rem' }}>Reason / Details</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {logs.map((log, index) => {
                                     // FIX: Robust Date parsing to prevent "Invalid Date"
                                     const dateObj = new Date(log.event_time);
-                                    const formattedDate = isNaN(dateObj.getTime()) 
-                                        ? "Unknown Date" 
+                                    const formattedDate = isNaN(dateObj.getTime())
+                                        ? "Unknown Date"
                                         : dateObj.toLocaleString();
 
                                     return (
-                                        <tr key={index} style={{borderBottom: '1px solid #eee'}}>
-                                            <td style={{padding: '1rem', whiteSpace: 'nowrap'}}>
+                                        <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                                                 {formattedDate}
                                             </td>
                                             {/* Display Full Name with Last Name capitalized for better scannability */}
-                                            <td style={{padding: '1rem', fontWeight: 'bold'}}>
+                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>
                                                 {log.first_name} {log.last_name?.toUpperCase()}
                                             </td>
                                             {/* Colored badge indicating access result */}
-                                            <td style={{padding: '1rem'}}>
+                                            <td style={{ padding: '1rem' }}>
                                                 <span style={{
                                                     padding: '4px 12px',
                                                     borderRadius: '20px',
@@ -101,7 +101,7 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
                                                     {log.status ? '✓ VERIFIED' : '✗ DENIED'}
                                                 </span>
                                             </td>
-                                            <td style={{padding: '1rem', color: '#666', fontSize: '0.9rem'}}>
+                                            <td style={{ padding: '1rem', color: '#666', fontSize: '0.9rem' }}>
                                                 {log.reason || "No details provided"}
                                             </td>
                                         </tr>
