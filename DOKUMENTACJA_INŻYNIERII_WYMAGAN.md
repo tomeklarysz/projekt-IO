@@ -1,4 +1,4 @@
-## Dokumentacja inżynierii wymagań
+# Dokumentacja inżynierii wymagań
 
   
 
@@ -13,7 +13,7 @@ Członkowie zespołu:
 
   
 
-1.Macierz kompetencji zespołu
+### 1. Macierz kompetencji zespołu
 
   
 
@@ -40,41 +40,66 @@ Członkowie zespołu:
   
   
 
-2.Zestaw pytań, które zostały zadane w celu uszczegółowienia zadanego projektu
+### 2. Zestaw pytań, które zostały zadane w celu uszczegółowienia zadanego projektu
 
   
 
-| Pytanie  | Odpowiedź |
+| Pytanie | Odpowiedź |
 | --- | --- |
-| Ile ma wynosić czas przetwarzania? | 5 sekund |
+| Ile ma wynosić czas przetwarzania? | Do 5 sekund |
 | Jaka ma być trafność rozpoznawania? | 90% |
 | Ile pracowników musi zawierać baza? | Minimum 20 |
 | Jaki rodzaj kamery będzie wykorzystywany? | Dowolna kamera |
-| Jak pracownik będzie otrzymywał kod QR? | Kod będzie drukowany  |
+| Jak pracownik będzie otrzymywał kod QR? | Kod będzie drukowany |
 | Czy kod QR będzie miał termin ważności? | Tak |
 | Jak mają być raportowane wyjścia i wejścia? | Wypisane w pliku txt, poprawne/niepoprawne z możliwością wyświetlenia i pobrania |
-| Co się składa na panel administracyjny? | 1.Zarządzanie pracownikami - dodanie, aktualizacja2.Dodawanie, drukowanie kodów QR3.Zmiana terminów ważności kodów QR4.Raportowanie wejść i wyjść  |
+| Co się składa na panel administracyjny? | 1. Zarządzanie pracownikami - dodanie nowego pracownika (imię, nazwisko, zdjęcie), aktualizacja danych pracownika (imię, nazwisko, zdjęcie), usuwanie pracownika<br> 2. Pobieranie, udostępnianie kodu QR pracownika <br> 3. Zmiana terminów ważności kodów QR pracownika <br> 4. Przegląd zarejestrowanych pracowników <br> 5. Przegląd zarejestrowanych prób wejść i wyjść pracowników <br> 6. Pobieranie raportu wejść i wyjść pracownika <br>
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+### 3. Format danych wejściowych i ich struktury
 
-| Kategoria | Opis |
-| --- | --- |
-| Aktorzy | Pracownik (Inicjator), Kamera, System Weryfikacji (Backend), Baza Danych (Repozytorium Danych) |
-| Opis | Weryfikacja tożsamości pracownika za pomocą dwuetapowego procesu: skanowania kodu QR, a następnie weryfikacji biometrycznej twarzy. Celem jest przyznanie/odrzucenie przepustki i rejestracja ruchu (wejście/wyjście). |
-| Dane Wejściowe | Obraz Kodu QR (binarne), Obraz/Wideo Twarzy (binarne), Typ Ruchu (Wejście/Wyjście - opcjonalne). |
-| Wyzwalacz | Pracownik pokazuje Kod QR do kamery, inicjując automatyczne skanowanie. |
-| Odpowiedź | Pozytywna: Wyświetlenie "PRZEPUSTKA PRZYZNANA" oraz rejestracja zdarzenia (Wejście/Wyjście) w systemie. |
-|| Negatywna: Wyświetlenie "ODRZUCONO" z krótkim opisem powodu (np. Nieznany Kod QR, Błąd Weryfikacji Twarzy). |
-| Uwagi | System musi szybko porównać dane biometryczne twarzy z referencyjnym zdjęciem z Bazy Danych powiązanym z zeskanowanym Kodem QR. Musi być obsłużona zarówno ścieżka wejścia, jak i wyjścia. |
+| Nazwa pola | Typ danych | Wymagalność | Opis |
+| --- | --- | --- | --- |
+| Obraz z kamery | Strumień wideo (klatki) | Wymagane | Ciągły strumień klatek obrazu (min. 640x480px) służący do detekcji QR i twarzy. |
+| Kod QR | Ciąg znaków (String) | Wymagane | Rozpoznany w klatce wideo ciąg znaków (UUID), identyfikujący pracownika. |
+| Obraz twarzy | Macierz pikseli | Wymagane | Wykadrowany z klatki fragment obrazu zawierający twarz, przekazywany do modelu biometrycznego. |
+| Identyfikator pracownika | Liczba całkowita (Integer) | Wymagane | Unikalny numer ID pracownika w bazie danych, powiązany z kodem QR. |
+| Wektor cech twarzy (Embedding) | Lista liczb zmiennoprzecinkowych | Wymagane | Reprezentacja matematyczna twarzy (np. 128-wymiarowa), służąca do porównań. |
+
+### 4. Dane przechowywane dla każdego pracownika
+
+| Nazwa Pola / Atrybutu | Typ Danych | Opis |
+| --- | --- | --- |
+| id | Integer | Unikalny identyfikator numeryczny pracownika (Klucz Główny). |
+| first_name | String | Imię pracownika. |
+| last_name | String | Nazwisko pracownika. |
+| photo_path | String | Ścieżka do pliku ze zdjęciem pracownika. |
+| qr_hash | String (Hash/UUID) | Unikalny identyfikator (hash) kodu QR. |
+| qr_expiration_date | Date | Data ważności kodu QR. |
+| vector_features | Array / List [Float] | Wektor cech biometrycznych twarzy. |
+| plik_zdjęcia (na dysku) | Image File | Fizyczny plik graficzny ze zdjęciem pracownika (JPG/PNG). |
+| plik_kod_qr (na dysku) | Image File | Fizyczny plik graficzny z wygenerowanym kodem QR (PNG). |
+
+### 5. Dane przechowywane dla każdego zdarzenia (logi)
+
+| Nazwa Pola / Atrybutu | Typ Danych | Opis |
+| --- | --- | --- |
+| id | Integer | Unikalny identyfikator zdarzenia (Klucz Główny). |
+| event_time | DateTime | Data i godzina wystąpienia zdarzenia. |
+| employee_id | Integer | Identyfikator pracownika powiązanego ze zdarzeniem. |
+| status | Boolean | Wynik weryfikacji (Prawda = Sukces, Fałsz = Porażka). |
+| reason | String | Opis powodu odrzucenia lub statusu (opcjonalne). |
+
+
+### 6. Model systemu
+
+
+<!-- | Aktor | Scenariusz / Cel | Dane Wejściowe | Wyzwalacz | Odpowiedź Systemu | Uwagi |
+| --- | --- | --- | --- | --- | --- |
+| **Pracownik** | **Weryfikacja tożsamości (Wejście/Wyjście/Sprawdzenie)** | Obraz wideo (QR + Twarz) | Pracownik pokazuje kod QR do kamery, w przypadku poprawnego kodu QR system próbuje rozpoznać twarz pokazaną do kamery. | **Sukces:** Komunikat "Identity Verified", zielona ramka, log "True".<br>**Porażka:** Komunikat błędu (np. "Access Denied"), czerwona ramka, log "False". | System działa w pętli: ciągła detekcja QR, następnie próba rozpoznania twarzy w określonym czasie. |
+| **Administrator** | **Dodanie pracownika** | Formularz: Imię, Nazwisko, Plik zdjęcia (JPG/PNG). | Kliknięcie "Add Employee" w panelu webowym. | Utworzenie rekordu w DB, wygenerowanie hasha QR, zapisanie plików, obliczenie wektora twarzy. | Wymagana walidacja czy zdjęcie zawiera twarz. |
+| **Administrator** | **Edycja pracownika** | Zmodyfikowane dane (Imię/Nazwisko/Zdjęcie). | Kliknięcie "Edit" na liście pracowników. | Aktualizacja rekordu DB. Jeśli zmieniono zdjęcie -> przeliczenie wektora. | Możliwość aktualizacji samego zdjęcia bez zmiany danych osobowych. |
+| **Administrator** | **Usunięcie pracownika** | ID Pracownika. | Kliknięcie "Delete" w panelu. | Usunięcie rekordu z DB oraz powiązanych plików z dysku. | Akcja nieodwracalna. Kaskadowe usuwanie logów. |
+| **Administrator** | **Przegląd logów** | Filtry (opcjonalnie). | Wejście w zakładkę "Logs". | Wyświetlenie tabeli z historią wejść/wyjść (Czas, Status, Kto). | Logi są tylko do odczytu. | -->
 
 
 ## Przedstawienie modelowanego systemu za pomocą diagramów
