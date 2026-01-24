@@ -1,6 +1,6 @@
 from database.db_operations import  delete_employee_by_qr_hash, add_employee, get_employee_id_by_qr, log_verification_event, get_latest_status, get_logs
 
-emp_id1 = add_employee("x", "x", ".\images\img2.jpg")
+emp_id1 = add_employee("jan", "kowalski", ".\images\img2.jpg")
 #emp_id1 = add_employee("z", "z", ".\images\img2.png")
 
 #qr_hash1 = "19ee93d6-eb20-4988-8e31-fd6ddc829c7c"

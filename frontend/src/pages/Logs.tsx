@@ -41,14 +41,60 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
             });
     }, [qrHash]);
 
+    const downloadLogs = () => {
+        if (logs.length === 0) return;
+
+        let content = "ACCESS CONTROL ACTIVITY REPORT\n";
+        content += `Generated on: ${new Date().toLocaleString()}\n`;
+        content += "====================================================\n\n";
+
+        logs.forEach((log, index) => {
+            const date = new Date(log.event_time).toLocaleString();
+            const status = log.status ? "VERIFIED" : "DENIED";
+            
+            content += `${index + 1}. [${date}]\n`;
+            content += `   Employee: ${log.first_name} ${log.last_name?.toUpperCase()}\n`;
+            content += `   Status:   ${status}\n`;
+            content += `   Details:  ${log.reason || "No additional information"}\n`;
+            content += "----------------------------------------------------\n";
+        });
+
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        link.href = url;
+        link.download = `Access_Logs_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="logs-container">
-            {/* Header section with title and navigation button */}
+            {/* Header section with title and navigation buttons */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1><i className="fas fa-history"></i> Access Logs</h1>
-                <button type="button" className="btn btn-secondary" onClick={onGoToMenu}>
-                    ← Back to Dashboard
-                </button>
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* Download Button */}
+                    {!isLoading && logs.length > 0 && (
+                        <button 
+                            type="button" 
+                            className="btn btn-primary" 
+                            onClick={downloadLogs}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                            <i className="fas fa-file-download"></i> Download Logs
+                        </button>
+                    )}
+
+                    <button type="button" className="btn btn-secondary" onClick={onGoToMenu}>
+                        ← Back to Dashboard
+                    </button>
+                </div>
             </div>
 
             <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
@@ -72,7 +118,6 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
                             </thead>
                             <tbody>
                                 {logs.map((log, index) => {
-                                    // FIX: Robust Date parsing to prevent "Invalid Date"
                                     const dateObj = new Date(log.event_time);
                                     const formattedDate = isNaN(dateObj.getTime())
                                         ? "Unknown Date"
@@ -83,11 +128,9 @@ export default function Logs({ onGoToMenu, qrHash }: LogsProps) {
                                             <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                                                 {formattedDate}
                                             </td>
-                                            {/* Display Full Name with Last Name capitalized for better scannability */}
                                             <td style={{ padding: '1rem', fontWeight: 'bold' }}>
                                                 {log.first_name} {log.last_name?.toUpperCase()}
                                             </td>
-                                            {/* Colored badge indicating access result */}
                                             <td style={{ padding: '1rem' }}>
                                                 <span style={{
                                                     padding: '4px 12px',
