@@ -39,7 +39,7 @@ def main():
                 print(f"QR Validated. Proceeding to Face Auth for User: {user_data.get('first_name')}")
                 
                 # Step 2: Face Authentication
-                success, message = auth.verify_user(user_data, camera, timeout=10)
+                success, message = auth.verify_user(user_data, camera)
                 
                 print(f"\nAuthentication Result: {'SUCCESS' if success else 'FAILURE'}")
                 print(f"Details: {message}")
