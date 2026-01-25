@@ -16,7 +16,7 @@ Dokument służy do przeprowadzenia testów akceptacyjnych systemu.
 | 7 | **Edycja ważności QR - ustawienie daty w przeszłości** | Istniejący pracownik. | 1. Wejść w edycję.<br>2. Zmienić datę ważności na wczorajszą.<br>3. Zapisać. | Komunikat o udanej zmianie, nowa data widoczna w szczegółach pracownika, QR przestaje działać. | OK |
 | 8 | **Edycja ważności QR - ustawienie daty w przyszłości** | Istniejący pracownik. | 1. Wejść w edycję.<br>2. Zmienić datę ważności na dzień po aktualnej.<br>3. Zapisać. | Komunikat o udanej zmianie, nowa data widoczna w szczegółach pracownika, QR dalej działa. | OK |
 | 9 | **Przegląd logów** | Wykonane testy 1-5 dla roli Pracownika. | 1. Wejść w "Access Logs".<br>2. Sprawdzić listę. | Lista zawiera poprawne wpisy z testów (daty, nazwiska, statusy). | OK |
-| 10 | **Pobranie raportu** | Dostępne logi w bazie. | 1. Kliknąć "Pobierz raport". | Pobranie pliku z historią zdarzeń. | BŁĄD - brak możliwości pobrania raportu z interfejsu |
+| 10 | **Pobranie raportu** | Dostępne logi w bazie. | 1. Wejść w "Access Logs".<br>2. Kliknąć "Download Logs". | Pobranie pliku z historią zdarzeń. | OK |
 
 ## Rola: Pracownik
 
